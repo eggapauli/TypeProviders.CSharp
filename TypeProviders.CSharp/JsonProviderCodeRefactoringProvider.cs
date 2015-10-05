@@ -57,6 +57,63 @@ namespace TypeProviders.CSharp
 
         async Task<Document> UpdateTypeProviderAsync(Document document, TypeDeclarationSyntax typeDecl, string sampleData, CancellationToken ct)
         {
+            var data = await GetData(sampleData);
+
+            var documentEditor = await DocumentEditor.CreateAsync(document);
+            var jObj = data as JObject;
+            if (jObj != null)
+            {
+                foreach (var property in jObj.Properties())
+                {
+                    var propertyDeclaration = SyntaxFactory.PropertyDeclaration
+                        ( GetTokenType(property.Value)
+                        , property.Name
+                        )
+                        .WithModifiers(SyntaxFactory.TokenList(SyntaxFactory.Token(SyntaxKind.PublicKeyword)))
+                        .WithAccessorList(
+                            SyntaxFactory.AccessorList(
+                                SyntaxFactory.List(
+                                    new[]
+                                    {
+                                        SyntaxFactory.AccessorDeclaration(SyntaxKind.GetAccessorDeclaration)
+                                            .WithSemicolonToken(SyntaxFactory.Token(SyntaxKind.SemicolonToken)),
+                                        SyntaxFactory.AccessorDeclaration(SyntaxKind.SetAccessorDeclaration)
+                                            .WithModifiers(SyntaxFactory.TokenList(SyntaxFactory.Token(SyntaxKind.PrivateKeyword)))
+                                            .WithSemicolonToken(SyntaxFactory.Token(SyntaxKind.SemicolonToken))
+                                    }
+                                )
+                            )
+                            .WithOpenBraceToken(SyntaxFactory.Token(SyntaxKind.OpenBraceToken))
+                            .WithCloseBraceToken(SyntaxFactory.Token(SyntaxKind.CloseBraceToken))
+                        ).WithAdditionalAnnotations(Formatter.Annotation);
+                    documentEditor.AddMember(typeDecl, propertyDeclaration);
+                }
+            }
+            return documentEditor.GetChangedDocument();
+        }
+
+        TypeSyntax GetTokenType(JToken token)
+        {
+            switch (token.Type)
+            {
+                case JTokenType.String:
+                    return SyntaxFactory.PredefinedType(SyntaxFactory.Token(SyntaxKind.StringKeyword));
+                default:
+                    throw new NotImplementedException();
+            }
+        }
+
+        static async Task<JToken> GetData(string sampleData)
+        {
+            Uri sampleDataUri;
+            if (Uri.TryCreate(sampleData, UriKind.Absolute, out sampleDataUri))
+            {
+                using (var client = new HttpClient())
+                {
+                    var data = await client.GetStringAsync(sampleDataUri);
+                }
+            }
+            return JToken.Parse(sampleData);
         }
     }
 }

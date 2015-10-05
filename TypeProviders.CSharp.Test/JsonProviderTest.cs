@@ -26,6 +26,77 @@ namespace TypeProviders.CSharp.Test
             action.Should().BeNull();
         }
 
+        [Fact]
+        public async Task ShouldNotHaveRefactoringWhenSampleDataArgumentIsMissing()
+        {
+            var code = @"
+[TypeProviders.CSharp.Providers.JsonProvider]
+class TestProvider
+{
+}
+";
+            var action = await GetRefactoring(code);
+            action.Should().BeNull();
+        }
+
+        [Fact]
+        public async Task ShouldNotHaveRefactoringWhenSampleDataArgumentHasWrongType()
+        {
+            var code = @"
+[TypeProviders.CSharp.Providers.JsonProvider(5)]
+class TestProvider
+{
+}
+";
+            var action = await GetRefactoring(code);
+            action.Should().BeNull();
+        }
+
+        [Fact]
+        public async Task ShouldHaveRefactoringForSimpleSampleData()
+        {
+            var code = @"
+[TypeProviders.CSharp.Providers.JsonProvider(""{\""asd\"": \""qwe\""}"")]
+class TestProvider
+{
+}
+";
+            var action = await GetAndApplyRefactoring(code);
+            action.Should().NotBeNull();
+        }
+
+        [Fact]
+        public async Task ShouldRefactorAccordingToSimpleSampleData()
+        {
+            var code = @"
+[TypeProviders.CSharp.Providers.JsonProvider(""{\""asd\"": \""qwe\""}"")]
+class TestProvider
+{
+}
+";
+
+            var expectedCode = @"
+[TypeProviders.CSharp.Providers.JsonProvider(""{\""asd\"": \""qwe\""}"")]
+class TestProvider
+{
+    public string asd { get; private set; }
+}
+";
+
+            var document = await GetAndApplyRefactoring(code);
+            var text = await document.GetTextAsync();
+            expectedCode.Should().Be(text.ToString());
+        }
+
+        static async Task<Document> GetAndApplyRefactoring(string code)
+        {
+            var document = CreateDocument(code);
+            var action = await GetRefactoring(document);
+            var operations = await action.GetOperationsAsync(CancellationToken.None);
+            var solution = operations.OfType<ApplyChangesOperation>().Single().ChangedSolution;
+            return solution.GetDocument(document.Id);
+        }
+
         static async Task<CodeAction> GetRefactoring(string code)
         {
             var document = CreateDocument(code);

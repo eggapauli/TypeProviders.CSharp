@@ -93,7 +93,7 @@ class TestProvider
 
             var document = await GetAndApplyRefactoring(code);
             var text = await document.GetTextAsync();
-            expectedCode.Should().Be(text.ToString());
+            text.ToString().Should().Be(expectedCode);
         }
 
         [Fact]
@@ -122,7 +122,7 @@ class TestProvider
 
             var document = await GetAndApplyRefactoring(code);
             var text = await document.GetTextAsync();
-            expectedCode.Should().Be(text.ToString());
+            text.ToString().Should().Be(expectedCode);
         }
 
         static async Task<Document> GetAndApplyRefactoring(string code)

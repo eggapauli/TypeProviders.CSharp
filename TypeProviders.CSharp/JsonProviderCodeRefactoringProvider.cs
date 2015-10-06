@@ -13,6 +13,7 @@ using Microsoft.CodeAnalysis.Editing;
 using Newtonsoft.Json.Linq;
 using Newtonsoft.Json;
 using Microsoft.CodeAnalysis.Formatting;
+using System.Collections.Generic;
 
 namespace TypeProviders.CSharp
 {
@@ -30,7 +31,7 @@ namespace TypeProviders.CSharp
 
             var node = root.FindNode(context.Span);
 
-            var typeDecl = node as TypeDeclarationSyntax;
+            var typeDecl = node as ClassDeclarationSyntax;
             if (typeDecl == null) return;
 
             var compilation = await context.Document.Project.GetCompilationAsync(context.CancellationToken).ConfigureAwait(false);
@@ -55,44 +56,81 @@ namespace TypeProviders.CSharp
             context.RegisterRefactoring(action);
         }
 
-        async Task<Document> UpdateTypeProviderAsync(Document document, TypeDeclarationSyntax typeDecl, string sampleData, CancellationToken ct)
+        async Task<Document> UpdateTypeProviderAsync(Document document, ClassDeclarationSyntax typeDecl, string sampleData, CancellationToken ct)
         {
             var data = await GetData(sampleData);
 
-            var documentEditor = await DocumentEditor.CreateAsync(document);
+            var members = GetTypeProviderMembers(typeDecl, data);
+            var newTypeDecl = typeDecl
+                .WithMembers(SyntaxFactory.List(members))
+                .WithAdditionalAnnotations(Formatter.Annotation);
+            var syntaxRoot = await document.GetSyntaxRootAsync();
+            return document.WithSyntaxRoot(syntaxRoot.ReplaceNode(typeDecl, newTypeDecl));
+        }
+
+        IEnumerable<MemberDeclarationSyntax> GetTypeProviderMembers(TypeDeclarationSyntax typeDecl, JToken data)
+        {
             var jObj = data as JObject;
             if (jObj != null)
             {
                 foreach (var property in jObj.Properties())
                 {
-                    var propertyDeclaration = SyntaxFactory.PropertyDeclaration
-                        ( GetTokenType(property.Value)
-                        , property.Name
-                        )
-                        .WithModifiers(SyntaxFactory.TokenList(SyntaxFactory.Token(SyntaxKind.PublicKeyword)))
-                        .WithAccessorList(
-                            SyntaxFactory.AccessorList(
-                                SyntaxFactory.List(
-                                    new[]
-                                    {
-                                        SyntaxFactory.AccessorDeclaration(SyntaxKind.GetAccessorDeclaration)
-                                            .WithSemicolonToken(SyntaxFactory.Token(SyntaxKind.SemicolonToken)),
-                                        SyntaxFactory.AccessorDeclaration(SyntaxKind.SetAccessorDeclaration)
-                                            .WithModifiers(SyntaxFactory.TokenList(SyntaxFactory.Token(SyntaxKind.PrivateKeyword)))
-                                            .WithSemicolonToken(SyntaxFactory.Token(SyntaxKind.SemicolonToken))
-                                    }
-                                )
-                            )
+                    if (property.Value.Type == JTokenType.Object)
+                    {
+                        var subTypeName = GetIdentifierName(property.Name);
+                        var subTypeDecl = SyntaxFactory.ClassDeclaration(subTypeName)
+                            .WithModifiers(SyntaxFactory.TokenList(SyntaxFactory.Token(SyntaxKind.PublicKeyword)))
                             .WithOpenBraceToken(SyntaxFactory.Token(SyntaxKind.OpenBraceToken))
-                            .WithCloseBraceToken(SyntaxFactory.Token(SyntaxKind.CloseBraceToken))
-                        ).WithAdditionalAnnotations(Formatter.Annotation);
-                    documentEditor.AddMember(typeDecl, propertyDeclaration);
+                            .WithCloseBraceToken(SyntaxFactory.Token(SyntaxKind.CloseBraceToken));
+
+                        var type = SyntaxFactory.ParseTypeName(subTypeName);
+                        var propertyName = GetIdentifierName(property.Name);
+                        var propertyDecl = GetPropertyDeclaration(type, propertyName);
+                        yield return propertyDecl;
+
+                        var subTypeMembers = GetTypeProviderMembers(subTypeDecl, property.Value);
+                        yield return subTypeDecl.WithMembers(SyntaxFactory.List(subTypeMembers));
+                    }
+                    else
+                    {
+                        var type = GetTypeFromToken(property.Value);
+                        var propertyName = GetIdentifierName(property.Name);
+                        var propertyDecl = GetPropertyDeclaration(type, propertyName);
+                        yield return propertyDecl;
+                    }
                 }
             }
-            return documentEditor.GetChangedDocument();
         }
 
-        TypeSyntax GetTokenType(JToken token)
+        PropertyDeclarationSyntax GetPropertyDeclaration(TypeSyntax type, string propertyName)
+        {
+            return
+                SyntaxFactory.PropertyDeclaration(type, propertyName)
+                    .WithModifiers(SyntaxFactory.TokenList(SyntaxFactory.Token(SyntaxKind.PublicKeyword)))
+                    .WithAccessorList(
+                        SyntaxFactory.AccessorList(
+                            SyntaxFactory.List(
+                                new[]
+                                {
+                                    SyntaxFactory.AccessorDeclaration(SyntaxKind.GetAccessorDeclaration)
+                                        .WithSemicolonToken(SyntaxFactory.Token(SyntaxKind.SemicolonToken)),
+                                    SyntaxFactory.AccessorDeclaration(SyntaxKind.SetAccessorDeclaration)
+                                        .WithModifiers(SyntaxFactory.TokenList(SyntaxFactory.Token(SyntaxKind.PrivateKeyword)))
+                                        .WithSemicolonToken(SyntaxFactory.Token(SyntaxKind.SemicolonToken))
+                                }
+                            )
+                        )
+                        .WithOpenBraceToken(SyntaxFactory.Token(SyntaxKind.OpenBraceToken))
+                        .WithCloseBraceToken(SyntaxFactory.Token(SyntaxKind.CloseBraceToken))
+                    );
+        }
+
+        string GetIdentifierName(string jsonPropertyName)
+        {
+            return char.ToUpper(jsonPropertyName[0]) + jsonPropertyName.Substring(1);
+        }
+
+        TypeSyntax GetTypeFromToken(JToken token)
         {
             switch (token.Type)
             {

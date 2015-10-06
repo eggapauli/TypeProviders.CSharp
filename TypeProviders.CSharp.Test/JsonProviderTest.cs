@@ -96,6 +96,34 @@ class TestProvider
             expectedCode.Should().Be(text.ToString());
         }
 
+        [Fact]
+        public async Task ShouldRefactorAccordingToSampleDataWithNestedObject()
+        {
+            var json = @"{\""Obj\"": { \""Value\"": 5 } }";
+            var attribute = $@"[TypeProviders.CSharp.Providers.JsonProvider(""{json}"")]";
+
+            var code = attribute + @"
+class TestProvider
+{
+}
+";
+
+            var expectedCode = attribute + $@"
+class TestProvider
+{{
+    public Obj Obj {{ get; private set; }}
+
+    public class Obj
+    {{
+        public int Value {{ get; private set; }}
+    }}
+}}
+";
+
+            var document = await GetAndApplyRefactoring(code);
+            var text = await document.GetTextAsync();
+            expectedCode.Should().Be(text.ToString());
+        }
 
         static async Task<Document> GetAndApplyRefactoring(string code)
         {

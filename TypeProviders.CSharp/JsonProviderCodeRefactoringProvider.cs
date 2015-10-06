@@ -96,10 +96,31 @@ namespace TypeProviders.CSharp
         {
             switch (token.Type)
             {
+                case JTokenType.Boolean:
+                    return SyntaxFactory.PredefinedType(SyntaxFactory.Token(SyntaxKind.BoolKeyword));
+                case JTokenType.Date:
+                    return SyntaxFactory.ParseTypeName("System.DateTime");
+                case JTokenType.Float:
+                    return SyntaxFactory.PredefinedType(SyntaxFactory.Token(SyntaxKind.DoubleKeyword));
+                case JTokenType.Integer:
+                    return SyntaxFactory.PredefinedType(SyntaxFactory.Token(SyntaxKind.IntKeyword));
                 case JTokenType.String:
+                    var value = (string)token;
+                    Guid guid;
+                    if (Guid.TryParse(value, out guid))
+                        return SyntaxFactory.ParseTypeName("System.Guid");
+                    TimeSpan timeSpan;
+                    if (TimeSpan.TryParse(value, out timeSpan))
+                        return SyntaxFactory.ParseTypeName("System.TimeSpan");
+                    Uri uri;
+                    if (Uri.TryCreate(value, UriKind.Absolute, out uri))
+                        return SyntaxFactory.ParseTypeName("System.Uri");
+
                     return SyntaxFactory.PredefinedType(SyntaxFactory.Token(SyntaxKind.StringKeyword));
+                case JTokenType.Object:
+
                 default:
-                    throw new NotImplementedException();
+                    throw new NotImplementedException("Unknown token type: " + token.Type);
             }
         }
 

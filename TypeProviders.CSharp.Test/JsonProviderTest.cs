@@ -65,22 +65,30 @@ class TestProvider
             action.Should().NotBeNull();
         }
 
-        [Fact]
-        public async Task ShouldRefactorAccordingToSimpleSampleData()
+        [Theory]
+        [InlineData(@"\""asdqwe\""", "string")]
+        [InlineData("5", "int")]
+        [InlineData("5.123", "double")]
+        [InlineData("true", "bool")]
+        [InlineData(@"\""2009-06-15T13:45:30.0000000Z\""", "System.DateTime")]
+        [InlineData(@"\""7E22EDE9-6D0F-48C2-A280-B36DC859435D\""", "System.Guid")]
+        [InlineData(@"\""05:04:03\""", "System.TimeSpan")]
+        [InlineData(@"\""http://example.com/path?query#hash\""", "System.Uri")]
+        public async Task ShouldRefactorAccordingToSimpleSampleData(string jsonValue, string expectedType)
         {
-            var code = @"
-[TypeProviders.CSharp.Providers.JsonProvider(""{\""asd\"": \""qwe\""}"")]
+            var attribute = $@"[TypeProviders.CSharp.Providers.JsonProvider(""{{\""Value\"": {jsonValue}}}"")]";
+
+            var code = attribute + @"
 class TestProvider
 {
 }
 ";
 
-            var expectedCode = @"
-[TypeProviders.CSharp.Providers.JsonProvider(""{\""asd\"": \""qwe\""}"")]
+            var expectedCode = attribute + $@"
 class TestProvider
-{
-    public string asd { get; private set; }
-}
+{{
+    public {expectedType} Value {{ get; private set; }}
+}}
 ";
 
             var document = await GetAndApplyRefactoring(code);
@@ -88,10 +96,12 @@ class TestProvider
             expectedCode.Should().Be(text.ToString());
         }
 
+
         static async Task<Document> GetAndApplyRefactoring(string code)
         {
             var document = CreateDocument(code);
             var action = await GetRefactoring(document);
+            action.Should().NotBeNull("Can't apply <null> refactoring");
             var operations = await action.GetOperationsAsync(CancellationToken.None);
             var solution = operations.OfType<ApplyChangesOperation>().Single().ChangedSolution;
             return solution.GetDocument(document.Id);

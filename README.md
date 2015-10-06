@@ -1,2 +1,2 @@
 # TypeProviders.CSharp
-Yet another attempt to bring F# type providers to C#
+Uses the .NET Compiler Platform to create C# types out of untyped data (e.g. JSON).

@@ -4,11 +4,9 @@ using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeRefactorings;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Text;
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using TypeProviders.CSharp.Providers;
@@ -22,7 +20,8 @@ namespace TypeProviders.CSharp.Test
         public async Task ShouldNotHaveRefactoringWhenAttributeNotSet()
         {
             var code = "class TestProvider { }";
-            var action = await GetRefactoring(code);
+            var provider = CreateCodeRefactoringProviderForDataStructure();
+            var action = await GetRefactoring(code, provider);
             action.Should().BeNull();
         }
 
@@ -35,7 +34,8 @@ class TestProvider
 {
 }
 ";
-            var action = await GetRefactoring(code);
+            var provider = CreateCodeRefactoringProviderForDataStructure();
+            var action = await GetRefactoring(code, provider);
             action.Should().BeNull();
         }
 
@@ -48,7 +48,8 @@ class TestProvider
 {
 }
 ";
-            var action = await GetRefactoring(code);
+            var provider = CreateCodeRefactoringProviderForDataStructure();
+            var action = await GetRefactoring(code, provider);
             action.Should().BeNull();
         }
 
@@ -61,7 +62,8 @@ class TestProvider
 {
 }
 ";
-            var action = await GetAndApplyRefactoring(code);
+            var provider = CreateCodeRefactoringProviderForDataStructure();
+            var action = await GetRefactoring(code, provider);
             action.Should().NotBeNull();
         }
 
@@ -90,8 +92,8 @@ class TestProvider
     public {expectedType} Value {{ get; private set; }}
 }}
 ";
-
-            var document = await GetAndApplyRefactoring(code);
+            var provider = CreateCodeRefactoringProviderForDataStructure();
+            var document = await GetAndApplyRefactoring(code, provider);
             var text = await document.GetTextAsync();
             text.ToString().Should().Be(expectedCode);
         }
@@ -119,35 +121,39 @@ class TestProvider
     }}
 }}
 ";
-
-            var document = await GetAndApplyRefactoring(code);
+            var provider = CreateCodeRefactoringProviderForDataStructure();
+            var document = await GetAndApplyRefactoring(code, provider);
             var text = await document.GetTextAsync();
             text.ToString().Should().Be(expectedCode);
         }
 
-        static async Task<Document> GetAndApplyRefactoring(string code)
+        private static JsonProviderCodeRefactoringProvider CreateCodeRefactoringProviderForDataStructure()
+        {
+            return new JsonProviderCodeRefactoringProvider { AddCreationMethods = false };
+        }
+
+        static async Task<Document> GetAndApplyRefactoring(string code, CodeRefactoringProvider codeRefactoringProvider)
         {
             var document = CreateDocument(code);
-            var action = await GetRefactoring(document);
+            var action = await GetRefactoring(document, codeRefactoringProvider);
             action.Should().NotBeNull("Can't apply <null> refactoring");
             var operations = await action.GetOperationsAsync(CancellationToken.None);
             var solution = operations.OfType<ApplyChangesOperation>().Single().ChangedSolution;
             return solution.GetDocument(document.Id);
         }
 
-        static async Task<CodeAction> GetRefactoring(string code)
+        static async Task<CodeAction> GetRefactoring(string code, CodeRefactoringProvider codeRefactoringProvider)
         {
             var document = CreateDocument(code);
-            return await GetRefactoring(document);
+            return await GetRefactoring(document, codeRefactoringProvider);
         }
 
-        static async Task<CodeAction> GetRefactoring(Document document)
+        static async Task<CodeAction> GetRefactoring(Document document, CodeRefactoringProvider codeRefactoringProvider)
         {
             var root = await document.GetSyntaxRootAsync();
             var refactorings = new List<CodeAction>();
             var context = new CodeRefactoringContext(document, root.Span, refactorings.Add, CancellationToken.None);
-            var provider = new JsonProviderCodeRefactoringProvider();
-            await provider.ComputeRefactoringsAsync(context);
+            await codeRefactoringProvider.ComputeRefactoringsAsync(context);
             return refactorings.SingleOrDefault();
         }
 

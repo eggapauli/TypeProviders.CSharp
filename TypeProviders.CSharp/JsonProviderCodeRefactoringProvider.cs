@@ -22,6 +22,8 @@ namespace TypeProviders.CSharp
     {
         static readonly string AttributeFullName = typeof(Providers.JsonProviderAttribute).FullName;
 
+        public bool AddCreationMethods { get; set; } = true;
+
         public sealed override async Task ComputeRefactoringsAsync(CodeRefactoringContext context)
         {
             var root = await context

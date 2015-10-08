@@ -57,7 +57,7 @@ class TestProvider
         public async Task ShouldHaveRefactoringForSimpleSampleData()
         {
             var code = @"
-[TypeProviders.CSharp.Providers.JsonProvider(""{\""asd\"": \""qwe\""}"")]
+[TypeProviders.CSharp.Providers.JsonProvider(""{ \""asd\"": \""qwe\"" }"")]
 class TestProvider
 {
 }
@@ -78,7 +78,7 @@ class TestProvider
         [InlineData(@"\""http://example.com/path?query#hash\""", "System.Uri")]
         public async Task ShouldRefactorAccordingToSimpleSampleData(string jsonValue, string expectedType)
         {
-            var attribute = $@"[TypeProviders.CSharp.Providers.JsonProvider(""{{\""Value\"": {jsonValue}}}"")]";
+            var attribute = $@"[TypeProviders.CSharp.Providers.JsonProvider(""{{ \""Value\"": {jsonValue} }}"")]";
 
             var code = attribute + @"
 class TestProvider
@@ -101,7 +101,7 @@ class TestProvider
         [Fact]
         public async Task ShouldRefactorAccordingToSampleDataWithNestedObject()
         {
-            var json = @"{\""Obj\"": { \""Value\"": 5 } }";
+            var json = @"{ \""Obj\"": { \""Value\"": 5 } }";
             var attribute = $@"[TypeProviders.CSharp.Providers.JsonProvider(""{json}"")]";
 
             var code = attribute + @"

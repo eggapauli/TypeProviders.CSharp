@@ -59,22 +59,28 @@ namespace TypeProviders.CSharp
 
         async Task<Document> UpdateTypeProviderAsync(Document document, ClassDeclarationSyntax typeDecl, string sampleData, CancellationToken ct)
         {
-            try
-            {
-                var data = await GetData(sampleData);
+            var data = await GetData(sampleData);
 
-                var members = GetMembers(typeDecl, data);
+            var members = GetMembers(typeDecl, data);
 
-                var newTypeDecl = typeDecl
-                    .WithMembers(List(members))
-                    .WithAdditionalAnnotations(Formatter.Annotation);
-                var syntaxRoot = await document.GetSyntaxRootAsync();
-                return document.WithSyntaxRoot(syntaxRoot.ReplaceNode(typeDecl, newTypeDecl));
-            }
-            catch (Exception e)
+            var newTypeDecl = typeDecl
+                .WithMembers(List(members))
+                .WithAdditionalAnnotations(Formatter.Annotation);
+            var syntaxRoot = await document.GetSyntaxRootAsync();
+            return document.WithSyntaxRoot(syntaxRoot.ReplaceNode(typeDecl, newTypeDecl));
+        }
+
+        static async Task<JToken> GetData(string sampleData)
+        {
+            Uri sampleDataUri;
+            if (Uri.TryCreate(sampleData, UriKind.Absolute, out sampleDataUri))
             {
-                return document;
+                using (var client = new HttpClient())
+                {
+                    var data = await client.GetStringAsync(sampleDataUri);
+                }
             }
+            return JToken.Parse(sampleData);
         }
 
         IEnumerable<MemberDeclarationSyntax> GetMembers(ClassDeclarationSyntax typeDecl, JToken data)
@@ -143,54 +149,6 @@ namespace TypeProviders.CSharp
                         .WithOpenBraceToken(Token(SyntaxKind.OpenBraceToken))
                         .WithCloseBraceToken(Token(SyntaxKind.CloseBraceToken))
                     );
-        }
-
-        static string GetIdentifierName(string jsonPropertyName)
-        {
-            return char.ToUpper(jsonPropertyName[0]) + jsonPropertyName.Substring(1);
-        }
-
-        static TypeSyntax GetTypeFromToken(JToken token)
-        {
-            switch (token.Type)
-            {
-                case JTokenType.Boolean:
-                    return PredefinedType(Token(SyntaxKind.BoolKeyword));
-                case JTokenType.Date:
-                    return ParseTypeName("System.DateTime");
-                case JTokenType.Float:
-                    return PredefinedType(Token(SyntaxKind.DoubleKeyword));
-                case JTokenType.Integer:
-                    return PredefinedType(Token(SyntaxKind.IntKeyword));
-                case JTokenType.String:
-                    var value = (string)token;
-                    Guid guid;
-                    if (Guid.TryParse(value, out guid))
-                        return ParseTypeName("System.Guid");
-                    TimeSpan timeSpan;
-                    if (TimeSpan.TryParse(value, out timeSpan))
-                        return ParseTypeName("System.TimeSpan");
-                    Uri uri;
-                    if (Uri.TryCreate(value, UriKind.Absolute, out uri))
-                        return ParseTypeName("System.Uri");
-
-                    return PredefinedType(Token(SyntaxKind.StringKeyword));
-                default:
-                    throw new NotImplementedException("Unknown token type: " + token.Type);
-            }
-        }
-
-        static async Task<JToken> GetData(string sampleData)
-        {
-            Uri sampleDataUri;
-            if (Uri.TryCreate(sampleData, UriKind.Absolute, out sampleDataUri))
-            {
-                using (var client = new HttpClient())
-                {
-                    var data = await client.GetStringAsync(sampleDataUri);
-                }
-            }
-            return JToken.Parse(sampleData);
         }
 
         static IEnumerable<MemberDeclarationSyntax> GetCreationMethods(TypeDeclarationSyntax typeDecl, JToken sampleData)
@@ -400,6 +358,41 @@ namespace TypeProviders.CSharp
                         , rightSideAssignmentExpression
                         );
                 }
+            }
+        }
+
+        static string GetIdentifierName(string jsonPropertyName)
+        {
+            return char.ToUpper(jsonPropertyName[0]) + jsonPropertyName.Substring(1);
+        }
+
+        static TypeSyntax GetTypeFromToken(JToken token)
+        {
+            switch (token.Type)
+            {
+                case JTokenType.Boolean:
+                    return PredefinedType(Token(SyntaxKind.BoolKeyword));
+                case JTokenType.Date:
+                    return ParseTypeName("System.DateTime");
+                case JTokenType.Float:
+                    return PredefinedType(Token(SyntaxKind.DoubleKeyword));
+                case JTokenType.Integer:
+                    return PredefinedType(Token(SyntaxKind.IntKeyword));
+                case JTokenType.String:
+                    var value = (string)token;
+                    Guid guid;
+                    if (Guid.TryParse(value, out guid))
+                        return ParseTypeName("System.Guid");
+                    TimeSpan timeSpan;
+                    if (TimeSpan.TryParse(value, out timeSpan))
+                        return ParseTypeName("System.TimeSpan");
+                    Uri uri;
+                    if (Uri.TryCreate(value, UriKind.Absolute, out uri))
+                        return ParseTypeName("System.Uri");
+
+                    return PredefinedType(Token(SyntaxKind.StringKeyword));
+                default:
+                    throw new NotImplementedException("Unknown token type: " + token.Type);
             }
         }
     }

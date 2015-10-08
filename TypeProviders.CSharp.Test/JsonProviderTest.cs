@@ -11,6 +11,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using TypeProviders.CSharp.Providers;
 using Xunit;
+using System;
 
 namespace TypeProviders.CSharp.Test
 {
@@ -90,6 +91,14 @@ class TestProvider
 class TestProvider
 {{
     public {expectedType} Value {{ get; private set; }}
+
+    [Newtonsoft.Json.JsonConstructor]
+    private TestProvider({expectedType} value)
+    {{
+        Value = value;
+    }}
+
+{CreationMethods("TestProvider", 1)}
 }}
 ";
             var provider = CreateCodeRefactoringProviderForDataStructure();
@@ -118,7 +127,21 @@ class TestProvider
     public class TestProviderObj
     {{
         public int Value {{ get; private set; }}
+
+        [Newtonsoft.Json.JsonConstructor]
+        private TestProviderObj(int value)
+        {{
+            Value = value;
+        }}
     }}
+
+    [Newtonsoft.Json.JsonConstructor]
+    private TestProvider(TestProviderObj obj)
+    {{
+        Obj = obj;
+    }}
+
+{CreationMethods("TestProvider", 1)}
 }}
 ";
             var provider = CreateCodeRefactoringProviderForDataStructure();
@@ -127,9 +150,191 @@ class TestProvider
             text.ToString().Should().Be(expectedCode);
         }
 
-        private static JsonProviderCodeRefactoringProvider CreateCodeRefactoringProviderForDataStructure()
+        [Fact]
+        public async Task ShouldRefactorAccordingToSampleDataWithSimpleArray()
         {
-            return new JsonProviderCodeRefactoringProvider { AddCreationMethods = false };
+            var json = @"{ \""Values\"": [ 1, 2, 3 ] }";
+            var attribute = $@"[TypeProviders.CSharp.Providers.JsonProvider(""{json}"")]";
+
+            var code = attribute + @"
+class TestProvider
+{
+}
+";
+
+            var expectedCode = attribute + $@"
+class TestProvider
+{{
+    public System.Collections.Generic.IReadOnlyList<int> Values {{ get; private set; }}
+
+    [Newtonsoft.Json.JsonConstructor]
+    private TestProvider(System.Collections.Generic.IReadOnlyList<int> values)
+    {{
+        Values = values;
+    }}
+
+{CreationMethods("TestProvider", 1)}
+}}
+";
+            var provider = CreateCodeRefactoringProviderForDataStructure();
+            var document = await GetAndApplyRefactoring(code, provider);
+            var text = await document.GetTextAsync();
+            text.ToString().Should().Be(expectedCode);
+        }
+
+        [Fact]
+        public async Task ShouldRefactorAccordingToSampleDataWithArrayOfObjects()
+        {
+            var json = @"{ \""Values\"": [ { \""Value\"": 1 }, { \""Value\"": 2 }, { \""Value\"": 3 } ] }";
+            var attribute = $@"[TypeProviders.CSharp.Providers.JsonProvider(""{json}"")]";
+
+            var code = attribute + @"
+class TestProvider
+{
+}
+";
+
+            var expectedCode = attribute + $@"
+class TestProvider
+{{
+    public System.Collections.Generic.IReadOnlyList<TestProviderValuesItem> Values {{ get; private set; }}
+
+    public class TestProviderValuesItem
+    {{
+        public int Value {{ get; private set; }}
+
+        [Newtonsoft.Json.JsonConstructor]
+        private TestProviderValuesItem(int value)
+        {{
+            Value = value;
+        }}
+    }}
+
+    [Newtonsoft.Json.JsonConstructor]
+    private TestProvider(System.Collections.Generic.IReadOnlyList<TestProviderValuesItem> values)
+    {{
+        Values = values;
+    }}
+
+{CreationMethods("TestProvider", 1)}
+}}
+";
+            var provider = CreateCodeRefactoringProviderForDataStructure();
+            var document = await GetAndApplyRefactoring(code, provider);
+            var text = await document.GetTextAsync();
+            text.ToString().Should().Be(expectedCode);
+        }
+
+        [Fact]
+        public async Task ShouldRefactorAccordingToSampleDataWithArrayOfSimpleArray()
+        {
+            var json = @"{ \""Values\"": [ [ 1, 2 ], [ 3, 4 ] ] }";
+            var attribute = $@"[TypeProviders.CSharp.Providers.JsonProvider(""{json}"")]";
+
+            var code = attribute + @"
+class TestProvider
+{
+}
+";
+
+            var expectedCode = attribute + $@"
+class TestProvider
+{{
+    public System.Collections.Generic.IReadOnlyList<System.Collections.Generic.IReadOnlyList<int>> Values {{ get; private set; }}
+
+    [Newtonsoft.Json.JsonConstructor]
+    private TestProvider(System.Collections.Generic.IReadOnlyList<System.Collections.Generic.IReadOnlyList<int>> values)
+    {{
+        Values = values;
+    }}
+
+{CreationMethods("TestProvider", 1)}
+}}
+";
+            var provider = CreateCodeRefactoringProviderForDataStructure();
+            var document = await GetAndApplyRefactoring(code, provider);
+            var text = await document.GetTextAsync();
+            text.ToString().Should().Be(expectedCode);
+        }
+
+        [Fact]
+        public async Task ShouldRefactorAccordingToSampleDataWithArrayOfArrayOfObject()
+        {
+            var json = @"{ \""Values\"": [ [ { \""Value\"": 1 }, { \""Value\"": 2 } ], [ { \""Value\"": 3 }, { \""Value\"": 4 } ] ] }";
+            var attribute = $@"[TypeProviders.CSharp.Providers.JsonProvider(""{json}"")]";
+
+            var code = attribute + @"
+class TestProvider
+{
+}
+";
+
+            var expectedCode = attribute + $@"
+class TestProvider
+{{
+    public System.Collections.Generic.IReadOnlyList<System.Collections.Generic.IReadOnlyList<TestProviderValuesItem>> Values {{ get; private set; }}
+
+    public class TestProviderValuesItem
+    {{
+        public int Value {{ get; private set; }}
+
+        [Newtonsoft.Json.JsonConstructor]
+        private TestProviderValuesItem(int value)
+        {{
+            Value = value;
+        }}
+    }}
+
+    [Newtonsoft.Json.JsonConstructor]
+    private TestProvider(System.Collections.Generic.IReadOnlyList<System.Collections.Generic.IReadOnlyList<TestProviderValuesItem>> values)
+    {{
+        Values = values;
+    }}
+
+{CreationMethods("TestProvider", 1)}
+}}
+";
+            var provider = CreateCodeRefactoringProviderForDataStructure();
+            var document = await GetAndApplyRefactoring(code, provider);
+            var text = await document.GetTextAsync();
+            text.ToString().Should().Be(expectedCode);
+        }
+
+        static JsonProviderCodeRefactoringProvider CreateCodeRefactoringProviderForDataStructure()
+        {
+            return new JsonProviderCodeRefactoringProvider();
+        }
+
+        string CreationMethods(string typeName, int indentationLevel)
+        {
+            var lines = new[]
+            {
+                $"public static async System.Threading.Tasks.Task<{typeName}> LoadAsync(System.Uri uri)",
+                "{",
+                "    using (var client = new System.Net.Http.HttpClient())",
+                "    {",
+                "        var data = await client.GetStringAsync(uri);",
+                "        return FromData(data);",
+                "    }",
+                "}",
+                "",
+                $"public static {typeName} FromData(string data)",
+                "{",
+                $"    return Newtonsoft.Json.JsonConvert.DeserializeObject<{typeName}>(data);",
+                "}"
+            };
+            return IndentLines(lines, indentationLevel);
+        }
+
+        string IndentLines(string[] lines, int indentationLevel)
+        {
+            const int spacesPerIndentLevel = 4;
+            var indentSpaces = indentationLevel * spacesPerIndentLevel;
+            var indentedLines = lines
+                .Select(x => x != string.Empty
+                    ? new string(' ', indentSpaces) + x
+                    : x);
+            return string.Join(Environment.NewLine, indentedLines);
         }
 
         static async Task<Document> GetAndApplyRefactoring(string code, CodeRefactoringProvider codeRefactoringProvider)

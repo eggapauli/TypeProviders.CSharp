@@ -97,7 +97,7 @@ namespace TypeProviders.CSharp
                 {
                     if (property.Value.Type == JTokenType.Object)
                     {
-                        var subTypeName = GetIdentifierName(property.Name);
+                        var subTypeName = typeDecl.Identifier.Text + GetIdentifierName(property.Name);
                         var subTypeDecl = ClassDeclaration(subTypeName)
                             .WithModifiers(TokenList(Token(SyntaxKind.PublicKeyword)))
                             .WithOpenBraceToken(Token(SyntaxKind.OpenBraceToken))

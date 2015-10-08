@@ -113,9 +113,9 @@ class TestProvider
             var expectedCode = attribute + $@"
 class TestProvider
 {{
-    public Obj Obj {{ get; private set; }}
+    public TestProviderObj Obj {{ get; private set; }}
 
-    public class Obj
+    public class TestProviderObj
     {{
         public int Value {{ get; private set; }}
     }}

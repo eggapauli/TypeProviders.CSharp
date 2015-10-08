@@ -6,6 +6,7 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeRefactorings;
 using Microsoft.CodeAnalysis.CSharp;
+using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using System;
 using System.Net.Http;
@@ -76,7 +77,7 @@ namespace TypeProviders.CSharp
                 }
 
                 var newTypeDecl = typeDecl
-                    .WithMembers(SyntaxFactory.List(members))
+                    .WithMembers(List(members))
                     .WithAdditionalAnnotations(Formatter.Annotation);
                 var syntaxRoot = await document.GetSyntaxRootAsync();
                 return document.WithSyntaxRoot(syntaxRoot.ReplaceNode(typeDecl, newTypeDecl));
@@ -97,18 +98,18 @@ namespace TypeProviders.CSharp
                     if (property.Value.Type == JTokenType.Object)
                     {
                         var subTypeName = GetIdentifierName(property.Name);
-                        var subTypeDecl = SyntaxFactory.ClassDeclaration(subTypeName)
-                            .WithModifiers(SyntaxFactory.TokenList(SyntaxFactory.Token(SyntaxKind.PublicKeyword)))
-                            .WithOpenBraceToken(SyntaxFactory.Token(SyntaxKind.OpenBraceToken))
-                            .WithCloseBraceToken(SyntaxFactory.Token(SyntaxKind.CloseBraceToken));
+                        var subTypeDecl = ClassDeclaration(subTypeName)
+                            .WithModifiers(TokenList(Token(SyntaxKind.PublicKeyword)))
+                            .WithOpenBraceToken(Token(SyntaxKind.OpenBraceToken))
+                            .WithCloseBraceToken(Token(SyntaxKind.CloseBraceToken));
 
-                        var type = SyntaxFactory.ParseTypeName(subTypeName);
+                        var type = ParseTypeName(subTypeName);
                         var propertyName = GetIdentifierName(property.Name);
                         var propertyDecl = GetPropertyDeclaration(type, propertyName);
                         yield return propertyDecl;
 
                         var subTypeMembers = GetPropertiesFromData(subTypeDecl, property.Value);
-                        yield return subTypeDecl.WithMembers(SyntaxFactory.List(subTypeMembers));
+                        yield return subTypeDecl.WithMembers(List(subTypeMembers));
                     }
                     else
                     {
@@ -124,23 +125,23 @@ namespace TypeProviders.CSharp
         static PropertyDeclarationSyntax GetPropertyDeclaration(TypeSyntax type, string propertyName)
         {
             return
-                SyntaxFactory.PropertyDeclaration(type, propertyName)
-                    .WithModifiers(SyntaxFactory.TokenList(SyntaxFactory.Token(SyntaxKind.PublicKeyword)))
+                PropertyDeclaration(type, propertyName)
+                    .WithModifiers(TokenList(Token(SyntaxKind.PublicKeyword)))
                     .WithAccessorList(
-                        SyntaxFactory.AccessorList(
-                            SyntaxFactory.List(
+                        AccessorList(
+                            List(
                                 new[]
                                 {
-                                    SyntaxFactory.AccessorDeclaration(SyntaxKind.GetAccessorDeclaration)
-                                        .WithSemicolonToken(SyntaxFactory.Token(SyntaxKind.SemicolonToken)),
-                                    SyntaxFactory.AccessorDeclaration(SyntaxKind.SetAccessorDeclaration)
-                                        .WithModifiers(SyntaxFactory.TokenList(SyntaxFactory.Token(SyntaxKind.PrivateKeyword)))
-                                        .WithSemicolonToken(SyntaxFactory.Token(SyntaxKind.SemicolonToken))
+                                    AccessorDeclaration(SyntaxKind.GetAccessorDeclaration)
+                                        .WithSemicolonToken(Token(SyntaxKind.SemicolonToken)),
+                                    AccessorDeclaration(SyntaxKind.SetAccessorDeclaration)
+                                        .WithModifiers(TokenList(Token(SyntaxKind.PrivateKeyword)))
+                                        .WithSemicolonToken(Token(SyntaxKind.SemicolonToken))
                                 }
                             )
                         )
-                        .WithOpenBraceToken(SyntaxFactory.Token(SyntaxKind.OpenBraceToken))
-                        .WithCloseBraceToken(SyntaxFactory.Token(SyntaxKind.CloseBraceToken))
+                        .WithOpenBraceToken(Token(SyntaxKind.OpenBraceToken))
+                        .WithCloseBraceToken(Token(SyntaxKind.CloseBraceToken))
                     );
         }
 
@@ -154,28 +155,26 @@ namespace TypeProviders.CSharp
             switch (token.Type)
             {
                 case JTokenType.Boolean:
-                    return SyntaxFactory.PredefinedType(SyntaxFactory.Token(SyntaxKind.BoolKeyword));
+                    return PredefinedType(Token(SyntaxKind.BoolKeyword));
                 case JTokenType.Date:
-                    return SyntaxFactory.ParseTypeName("System.DateTime");
+                    return ParseTypeName("System.DateTime");
                 case JTokenType.Float:
-                    return SyntaxFactory.PredefinedType(SyntaxFactory.Token(SyntaxKind.DoubleKeyword));
+                    return PredefinedType(Token(SyntaxKind.DoubleKeyword));
                 case JTokenType.Integer:
-                    return SyntaxFactory.PredefinedType(SyntaxFactory.Token(SyntaxKind.IntKeyword));
+                    return PredefinedType(Token(SyntaxKind.IntKeyword));
                 case JTokenType.String:
                     var value = (string)token;
                     Guid guid;
                     if (Guid.TryParse(value, out guid))
-                        return SyntaxFactory.ParseTypeName("System.Guid");
+                        return ParseTypeName("System.Guid");
                     TimeSpan timeSpan;
                     if (TimeSpan.TryParse(value, out timeSpan))
-                        return SyntaxFactory.ParseTypeName("System.TimeSpan");
+                        return ParseTypeName("System.TimeSpan");
                     Uri uri;
                     if (Uri.TryCreate(value, UriKind.Absolute, out uri))
-                        return SyntaxFactory.ParseTypeName("System.Uri");
+                        return ParseTypeName("System.Uri");
 
-                    return SyntaxFactory.PredefinedType(SyntaxFactory.Token(SyntaxKind.StringKeyword));
-                case JTokenType.Object:
-
+                    return PredefinedType(Token(SyntaxKind.StringKeyword));
                 default:
                     throw new NotImplementedException("Unknown token type: " + token.Type);
             }
@@ -196,86 +195,70 @@ namespace TypeProviders.CSharp
 
         static IEnumerable<MemberDeclarationSyntax> GetCreationMethods(TypeDeclarationSyntax typeDecl)
         {
+            yield return GetLoadFromUriMethod(typeDecl.Identifier.Text);
+            yield return GetFromDataMethod(typeDecl.Identifier.Text, sampleData);
+        }
 
-            yield return SyntaxFactory.MethodDeclaration(SyntaxFactory.ParseTypeName($"System.Threading.Tasks.Task<{typeDecl.Identifier.Text}>"), "LoadAsync")
-                .WithModifiers(SyntaxFactory.TokenList(SyntaxFactory.Token(SyntaxKind.PublicKeyword), SyntaxFactory.Token(SyntaxKind.AsyncKeyword)))
-                .WithParameterList(SyntaxFactory.ParameterList
-                    (SyntaxFactory.Token(SyntaxKind.OpenParenToken)
-                    , SyntaxFactory.SingletonSeparatedList(SyntaxFactory.Parameter(SyntaxFactory.Identifier("uri")).WithType(SyntaxFactory.ParseTypeName("System.Uri")))
-                    , SyntaxFactory.Token(SyntaxKind.CloseParenToken)
-                    ))
-                .WithBody(SyntaxFactory.Block(SyntaxFactory.UsingStatement
-                    (SyntaxFactory.Token(SyntaxKind.UsingKeyword)
-                    , SyntaxFactory.Token(SyntaxKind.OpenParenToken)
-                    , SyntaxFactory.VariableDeclaration
-                        ( SyntaxFactory.IdentifierName("var")
-                        , SyntaxFactory.SingletonSeparatedList
-                            ( SyntaxFactory.VariableDeclarator("client")
-                                .WithInitializer(SyntaxFactory.EqualsValueClause
-                                    ( SyntaxFactory.ObjectCreationExpression
-                                        (SyntaxFactory.Token(SyntaxKind.NewKeyword)
-                                        , SyntaxFactory.ParseTypeName("System.Net.Http.HttpClient")
-                                        , SyntaxFactory.ArgumentList()
-                                            .WithOpenParenToken(SyntaxFactory.Token(SyntaxKind.OpenParenToken))
-                                            .WithCloseParenToken(SyntaxFactory.Token(SyntaxKind.CloseParenToken))
-                                        , initializer: null
-                                        )
-                                    ))
-                            )
+        static MethodDeclarationSyntax GetLoadFromUriMethod(string typeName)
+        {
+            return MethodDeclaration(ParseTypeName($"System.Threading.Tasks.Task<{typeName}>"), "LoadAsync")
+                .WithModifiers(TokenList(Token(SyntaxKind.PublicKeyword), Token(SyntaxKind.AsyncKeyword)))
+                .WithParameterList
+                    (ParameterList
+                        (SingletonSeparatedList
+                            (Parameter(Identifier("uri")).WithType(ParseTypeName("System.Uri")))
                         )
-                    , null
-                    , SyntaxFactory.Token(SyntaxKind.CloseParenToken)
-                    , SyntaxFactory.Block
-                        (SyntaxFactory.LocalDeclarationStatement
-                            (SyntaxFactory.VariableDeclaration
-                                (SyntaxFactory.IdentifierName("var")
-                                , SyntaxFactory.SingletonSeparatedList
-                                    (SyntaxFactory.VariableDeclarator("data")
-                                        .WithInitializer
-                                            (SyntaxFactory.EqualsValueClause
-                                                (SyntaxFactory.Token(SyntaxKind.EqualsToken)
-                                                , SyntaxFactory.AwaitExpression
-                                                    (SyntaxFactory.Token(SyntaxKind.AwaitKeyword)
-                                                    , SyntaxFactory.InvocationExpression
-                                                        (SyntaxFactory.MemberAccessExpression
-                                                            (SyntaxKind.SimpleMemberAccessExpression
-                                                            , SyntaxFactory.IdentifierName("client")
-                                                            , SyntaxFactory.IdentifierName("GetAsync")
-                                                            )
-                                                        , SyntaxFactory.ArgumentList
-                                                            (SyntaxFactory.Token(SyntaxKind.OpenParenToken)
-                                                            , SyntaxFactory.SingletonSeparatedList(SyntaxFactory.Argument(SyntaxFactory.IdentifierName("uri")))
-                                                            , SyntaxFactory.Token(SyntaxKind.CloseParenToken)
+                    )
+                .WithBody
+                    (Block
+                        (UsingStatement
+                            (Block
+                                (LocalDeclarationStatement
+                                    (VariableDeclaration(IdentifierName("var"))
+                                        .WithVariables
+                                            (SingletonSeparatedList
+                                                (VariableDeclarator("data")
+                                                    .WithInitializer(EqualsValueClause
+                                                        (AwaitExpression
+                                                            (InvocationExpression
+                                                                (MemberAccessExpression
+                                                                    (SyntaxKind.SimpleMemberAccessExpression
+                                                                    , IdentifierName("client")
+                                                                    , IdentifierName("GetStringAsync")
+                                                                    )
+                                                                , ArgumentList(SingletonSeparatedList(Argument(IdentifierName("uri"))))
+                                                                )
                                                             )
                                                         )
                                                     )
                                                 )
                                             )
                                     )
+                                , ReturnStatement
+                                    (InvocationExpression(IdentifierName("FromData"))
+                                        .WithArgumentList
+                                            (ArgumentList(SingletonSeparatedList(Argument(IdentifierName("data")))))
+                                    )
                                 )
                             )
-                            .WithSemicolonToken(SyntaxFactory.Token(SyntaxKind.SemicolonToken))
-                        , SyntaxFactory.ReturnStatement
-                            (SyntaxFactory.Token(SyntaxKind.ReturnKeyword)
-                            , SyntaxFactory.InvocationExpression(SyntaxFactory.IdentifierName("FromData"))
-                                .WithArgumentList(SyntaxFactory.ArgumentList
-                                    (SyntaxFactory.Token(SyntaxKind.OpenParenToken)
-                                    , SyntaxFactory.SingletonSeparatedList(SyntaxFactory.Argument(SyntaxFactory.IdentifierName("data")))
-                                    , SyntaxFactory.Token(SyntaxKind.CloseParenToken)
-                                    ))
-                            , SyntaxFactory.Token(SyntaxKind.SemicolonToken)
+                            .WithDeclaration(VariableDeclaration(IdentifierName("var"))
+                                .WithVariables(SingletonSeparatedList
+                                    (VariableDeclarator("client")
+                                        .WithInitializer
+                                            (EqualsValueClause
+                                                (ObjectCreationExpression
+                                                    (ParseTypeName("System.Net.Http.HttpClient")
+                                                    , ArgumentList()
+                                                    , initializer: null
+                                                    )
+                                                )
+                                            )
+                                    )
+                                )
                             )
                         )
-                    )));
-
-            //public async Task<JsonProvider> LoadAsync(System.Uri uri)
-            //{
-            //    using (var client = new HttpClient())
-            //    {
-            //        var data = await client.GetStringAsync(uri);
-            //        return FromData(data);
-            //    }
-            //}
+                    );
+        }
 
             //public JsonProvider FromData(string data)
             //{

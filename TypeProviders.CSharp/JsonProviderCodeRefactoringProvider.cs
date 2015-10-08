@@ -10,9 +10,7 @@ using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using System;
 using System.Net.Http;
-using Microsoft.CodeAnalysis.Editing;
 using Newtonsoft.Json.Linq;
-using Newtonsoft.Json;
 using Microsoft.CodeAnalysis.Formatting;
 using System.Collections.Generic;
 
@@ -22,8 +20,7 @@ namespace TypeProviders.CSharp
     public class JsonProviderCodeRefactoringProvider : CodeRefactoringProvider
     {
         static readonly string AttributeFullName = typeof(Providers.JsonProviderAttribute).FullName;
-
-        public bool AddDataStructure { get; set; } = true;
+        
         public bool AddCreationMethods { get; set; } = true;
 
         public sealed override async Task ComputeRefactoringsAsync(CodeRefactoringContext context)
@@ -44,7 +41,7 @@ namespace TypeProviders.CSharp
 
             var semanticModel = await context.Document.GetSemanticModelAsync(context.CancellationToken).ConfigureAwait(false);
             var typeSymbol = semanticModel.GetDeclaredSymbol(typeDecl);
-            
+
             var attribute = typeSymbol.GetAttributes()
                 .FirstOrDefault(attr => attr.AttributeClass.Equals(attributeSymbol));
             if (attribute == null) return;
@@ -62,19 +59,11 @@ namespace TypeProviders.CSharp
 
         async Task<Document> UpdateTypeProviderAsync(Document document, ClassDeclarationSyntax typeDecl, string sampleData, CancellationToken ct)
         {
-            try {
+            try
+            {
                 var data = await GetData(sampleData);
 
-                var members = Enumerable.Empty<MemberDeclarationSyntax>();
-
-                if (AddDataStructure)
-                {
-                    members = members.Concat(GetPropertiesFromData(typeDecl, data));
-                }
-                if (AddCreationMethods)
-                {
-                    members = members.Concat(GetCreationMethods(typeDecl));
-                }
+                var members = GetMembers(typeDecl, data);
 
                 var newTypeDecl = typeDecl
                     .WithMembers(List(members))
@@ -82,13 +71,24 @@ namespace TypeProviders.CSharp
                 var syntaxRoot = await document.GetSyntaxRootAsync();
                 return document.WithSyntaxRoot(syntaxRoot.ReplaceNode(typeDecl, newTypeDecl));
             }
-            catch(Exception e)
+            catch (Exception e)
             {
                 return document;
             }
         }
 
-        static IEnumerable<MemberDeclarationSyntax> GetPropertiesFromData(TypeDeclarationSyntax typeDecl, JToken data)
+        IEnumerable<MemberDeclarationSyntax> GetMembers(ClassDeclarationSyntax typeDecl, JToken data)
+        {
+            var members = GetPropertiesFromData(typeDecl, data);
+            if (AddCreationMethods)
+            {
+                members = members.Concat(GetCreationMethods(typeDecl, data));
+            }
+
+            return members;
+        }
+
+        IEnumerable<MemberDeclarationSyntax> GetPropertiesFromData(TypeDeclarationSyntax typeDecl, JToken data)
         {
             var jObj = data as JObject;
             if (jObj != null)
@@ -108,7 +108,7 @@ namespace TypeProviders.CSharp
                         var propertyDecl = GetPropertyDeclaration(type, propertyName);
                         yield return propertyDecl;
 
-                        var subTypeMembers = GetPropertiesFromData(subTypeDecl, property.Value);
+                        var subTypeMembers = GetMembers(subTypeDecl, property.Value);
                         yield return subTypeDecl.WithMembers(List(subTypeMembers));
                     }
                     else
@@ -193,16 +193,17 @@ namespace TypeProviders.CSharp
             return JToken.Parse(sampleData);
         }
 
-        static IEnumerable<MemberDeclarationSyntax> GetCreationMethods(TypeDeclarationSyntax typeDecl)
+        static IEnumerable<MemberDeclarationSyntax> GetCreationMethods(TypeDeclarationSyntax typeDecl, JToken sampleData)
         {
             yield return GetLoadFromUriMethod(typeDecl.Identifier.Text);
-            yield return GetFromDataMethod(typeDecl.Identifier.Text, sampleData);
+            yield return GetFromStringMethod(typeDecl.Identifier.Text);
+            yield return GetFromJTokenMethod(typeDecl.Identifier.Text, sampleData);
         }
 
         static MethodDeclarationSyntax GetLoadFromUriMethod(string typeName)
         {
             return MethodDeclaration(ParseTypeName($"System.Threading.Tasks.Task<{typeName}>"), "LoadAsync")
-                .WithModifiers(TokenList(Token(SyntaxKind.PublicKeyword), Token(SyntaxKind.AsyncKeyword)))
+                .WithModifiers(TokenList(Token(SyntaxKind.PublicKeyword), Token(SyntaxKind.StaticKeyword), Token(SyntaxKind.AsyncKeyword)))
                 .WithParameterList
                     (ParameterList
                         (SingletonSeparatedList
@@ -218,19 +219,20 @@ namespace TypeProviders.CSharp
                                         .WithVariables
                                             (SingletonSeparatedList
                                                 (VariableDeclarator("data")
-                                                    .WithInitializer(EqualsValueClause
-                                                        (AwaitExpression
-                                                            (InvocationExpression
-                                                                (MemberAccessExpression
-                                                                    (SyntaxKind.SimpleMemberAccessExpression
-                                                                    , IdentifierName("client")
-                                                                    , IdentifierName("GetStringAsync")
+                                                    .WithInitializer
+                                                        (EqualsValueClause
+                                                            (AwaitExpression
+                                                                (InvocationExpression
+                                                                    (MemberAccessExpression
+                                                                        (SyntaxKind.SimpleMemberAccessExpression
+                                                                        , IdentifierName("client")
+                                                                        , IdentifierName("GetStringAsync")
+                                                                        )
+                                                                    , ArgumentList(SingletonSeparatedList(Argument(IdentifierName("uri"))))
                                                                     )
-                                                                , ArgumentList(SingletonSeparatedList(Argument(IdentifierName("uri"))))
                                                                 )
                                                             )
                                                         )
-                                                    )
                                                 )
                                             )
                                     )
@@ -241,37 +243,164 @@ namespace TypeProviders.CSharp
                                     )
                                 )
                             )
-                            .WithDeclaration(VariableDeclaration(IdentifierName("var"))
-                                .WithVariables(SingletonSeparatedList
-                                    (VariableDeclarator("client")
-                                        .WithInitializer
-                                            (EqualsValueClause
-                                                (ObjectCreationExpression
-                                                    (ParseTypeName("System.Net.Http.HttpClient")
-                                                    , ArgumentList()
-                                                    , initializer: null
+                            .WithDeclaration
+                                (VariableDeclaration(IdentifierName("var"))
+                                    .WithVariables
+                                        (SingletonSeparatedList
+                                            (VariableDeclarator("client")
+                                                .WithInitializer
+                                                    (EqualsValueClause
+                                                        (ObjectCreationExpression
+                                                            (ParseTypeName("System.Net.Http.HttpClient")
+                                                            , ArgumentList()
+                                                            , initializer: null
+                                                            )
+                                                        )
+                                                    )
+                                            )
+                                        )
+                                )
+                        )
+                    );
+        }
+
+        static MemberDeclarationSyntax GetFromStringMethod(string typeName)
+        {
+            //public JsonProvider FromData(string data)
+            //{
+            //    var json = JToken.Parse(data);
+            //    return FromData(json);
+            //}
+            
+            return MethodDeclaration(ParseTypeName(typeName), "FromData")
+                .WithModifiers(TokenList(Token(SyntaxKind.PublicKeyword), Token(SyntaxKind.StaticKeyword)))
+                .WithParameterList
+                    (ParameterList
+                        (SingletonSeparatedList
+                            (Parameter(Identifier("data"))
+                                .WithType(PredefinedType(Token(SyntaxKind.StringKeyword)))
+                            )
+                        )
+                    )
+                .WithBody
+                    (Block
+                        (LocalDeclarationStatement
+                            (VariableDeclaration(IdentifierName("var"))
+                                .WithVariables
+                                    (SingletonSeparatedList
+                                        (VariableDeclarator("json")
+                                            .WithInitializer
+                                                (EqualsValueClause
+                                                    (InvocationExpression
+                                                        (MemberAccessExpression
+                                                            (SyntaxKind.SimpleMemberAccessExpression
+                                                            , ParseTypeName("Newtonsoft.Json.Linq.JToken")
+                                                            , IdentifierName("Parse"))
+                                                        , ArgumentList(
+                                                            SingletonSeparatedList(Argument(IdentifierName("data"))))
+                                                        )
                                                     )
                                                 )
-                                            )
+                                        )
                                     )
-                                )
+                            )
+                        , ReturnStatement
+                            (InvocationExpression(IdentifierName("FromData"))
+                                .WithArgumentList
+                                    (ArgumentList(SingletonSeparatedList(Argument(IdentifierName("json")))))
                             )
                         )
                     );
         }
 
-            //public JsonProvider FromData(string data)
+        static MemberDeclarationSyntax GetFromJTokenMethod(string typeName, JToken data)
+        {
+            //public JsonProvider FromData(JToken data)
             //{
-            //    var json = JToken.Parse(data);
-            //    if (json is JObject)
+            //    return new JsonProvider
             //    {
-            //        return new JsonProvider
-            //        {
-            //            Asd = (string)json["asd"]
-            //        };
-            //    }
-            //    throw new NotImplementedException();
+            //        Asd = (string)data["asd"],
+            //        Obj = Obj.FromData(data["obj"])
+            //    };
             //}
+
+            var initializers = GetInitializers(typeName, data);
+
+            return MethodDeclaration(ParseTypeName(typeName), "FromData")
+                .WithModifiers(TokenList(Token(SyntaxKind.PublicKeyword), Token(SyntaxKind.StaticKeyword)))
+                .WithParameterList
+                    (ParameterList
+                        (SingletonSeparatedList
+                            (Parameter(Identifier("data"))
+                                .WithType(ParseTypeName("Newtonsoft.Json.Linq.JToken"))
+                            )
+                        )
+                    )
+                .WithBody
+                    (Block
+                        (ReturnStatement
+                            (ObjectCreationExpression(IdentifierName(typeName))
+                                .WithInitializer
+                                    (InitializerExpression
+                                        (SyntaxKind.ObjectInitializerExpression
+                                        , SeparatedList(initializers)
+                                        )
+                                    )
+                            )
+                        )
+                    );
+        }
+        
+        static IEnumerable<ExpressionSyntax> GetInitializers(string typeName, JToken data)
+        {
+            var jObj = data as JObject;
+            if (jObj != null)
+            {
+                foreach (var property in jObj.Properties())
+                {
+                    var accessExpression =
+                        ElementAccessExpression
+                            (IdentifierName("data")
+                            , BracketedArgumentList
+                                (SingletonSeparatedList
+                                    (Argument
+                                        (LiteralExpression
+                                            (SyntaxKind.StringLiteralExpression
+                                            , Literal(property.Name)
+                                            )
+                                        )
+                                    )
+                                )
+                            );
+                    ExpressionSyntax rightSideAssignmentExpression;
+                    if (property.Value.Type == JTokenType.Object)
+                    {
+                        rightSideAssignmentExpression =
+                            InvocationExpression
+                                (MemberAccessExpression
+                                    (SyntaxKind.SimpleMemberAccessExpression
+                                    , IdentifierName(typeName + GetIdentifierName(property.Name))
+                                    , IdentifierName("FromData")
+                                    )
+                                , ArgumentList
+                                    (SingletonSeparatedList(Argument(accessExpression)))
+                                );
+                    }
+                    else
+                    {
+                        rightSideAssignmentExpression =
+                            CastExpression
+                                (GetTypeFromToken(property.Value)
+                                , accessExpression
+                                );
+                    }
+                    yield return AssignmentExpression
+                        (SyntaxKind.SimpleAssignmentExpression
+                        , IdentifierName(GetIdentifierName(property.Name))
+                        , rightSideAssignmentExpression
+                        );
+                }
+            }
         }
     }
 }

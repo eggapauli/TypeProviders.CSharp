@@ -1,18 +1,18 @@
-using System.Composition;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeRefactorings;
 using Microsoft.CodeAnalysis.CSharp;
-using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
-using System;
-using System.Net.Http;
-using Newtonsoft.Json.Linq;
 using Microsoft.CodeAnalysis.Formatting;
+using Newtonsoft.Json.Linq;
+using System;
 using System.Collections.Generic;
+using System.Composition;
+using System.Linq;
+using System.Net.Http;
+using System.Threading;
+using System.Threading.Tasks;
+using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
 namespace TypeProviders.CSharp
 {
@@ -63,7 +63,8 @@ namespace TypeProviders.CSharp
             var typeName = ParseTypeName(typeDecl.Identifier.Text);
             var rootEntry = new HierarchicalDataEntry(typeName, typeName.ToString(), typeName, dataEntries);
 
-            var members = GetMembers(rootEntry).Concat(GetCreationMethods(rootEntry));
+            var members = GetMembers(rootEntry)
+                .Concat(GetCreationMethods(rootEntry, data));
 
             var newTypeDecl = typeDecl
                 .WithMembers(List(members))
@@ -175,9 +176,10 @@ namespace TypeProviders.CSharp
                     );
         }
 
-        static IEnumerable<MemberDeclarationSyntax> GetCreationMethods(HierarchicalDataEntry dataEntry)
+        static IEnumerable<MemberDeclarationSyntax> GetCreationMethods(HierarchicalDataEntry dataEntry, JToken sampleData)
         {
             yield return GetLoadFromUriMethod(dataEntry.EntryType.ToString());
+            yield return GetGetSampleMethod(dataEntry.EntryType.ToString(), sampleData);
             yield return GetFromStringMethod(dataEntry.EntryType.ToString());
         }
 
@@ -330,6 +332,47 @@ namespace TypeProviders.CSharp
                                             )
                                     )
                                 )
+                                .WithArgumentList
+                                    (ArgumentList(SingletonSeparatedList(Argument(IdentifierName("data")))))
+                            )
+                        )
+                    );
+        }
+
+        static MethodDeclarationSyntax GetGetSampleMethod(string typeName, JToken sampleData)
+        {
+            //public JsonProvider GetSample()
+            //{
+            //    var data = "...";
+            //    return FromData(data);
+            //}
+
+            return MethodDeclaration(IdentifierName(typeName), "GetSample")
+                .WithModifiers(TokenList(Token(SyntaxKind.PublicKeyword), Token(SyntaxKind.StaticKeyword)))
+                .WithBody
+                    (Block
+                        (LocalDeclarationStatement
+                            (VariableDeclaration(IdentifierName("var"))
+                                .WithVariables
+                                    (SingletonSeparatedList
+                                        (VariableDeclarator("data")
+                                            .WithInitializer
+                                                (EqualsValueClause
+                                                    (LiteralExpression
+                                                        (SyntaxKind.StringLiteralExpression)
+                                                        .WithToken
+                                                            (Literal
+                                                                (sampleData.ToString
+                                                                    (Newtonsoft.Json.Formatting.None)
+                                                                )
+                                                            )
+                                                    )
+                                                )
+                                        )
+                                    )
+                            )
+                        , ReturnStatement
+                            (InvocationExpression(IdentifierName("FromData"))
                                 .WithArgumentList
                                     (ArgumentList(SingletonSeparatedList(Argument(IdentifierName("data")))))
                             )

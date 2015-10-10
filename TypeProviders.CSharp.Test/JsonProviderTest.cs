@@ -73,13 +73,14 @@ class TestProvider
         [InlineData("5", "int")]
         [InlineData("5.123", "double")]
         [InlineData("true", "bool")]
-        [InlineData(@"\""2009-06-15T13:45:30.0000000Z\""", "System.DateTime")]
+        [InlineData(@"\""2009-06-15T13:45:30Z\""", "System.DateTime")]
         [InlineData(@"\""7E22EDE9-6D0F-48C2-A280-B36DC859435D\""", "System.Guid")]
         [InlineData(@"\""05:04:03\""", "System.TimeSpan")]
         [InlineData(@"\""http://example.com/path?query#hash\""", "System.Uri")]
         public async Task ShouldRefactorAccordingToSimpleSampleData(string jsonValue, string expectedType)
         {
-            var attribute = $@"[TypeProviders.CSharp.Providers.JsonProvider(""{{ \""Value\"": {jsonValue} }}"")]";
+            var json = $@"{{ \""Value\"": {jsonValue} }}";
+            var attribute = $@"[TypeProviders.CSharp.Providers.JsonProvider(""{json}"")]";
 
             var code = attribute + @"
 class TestProvider
@@ -98,7 +99,7 @@ class TestProvider
         Value = value;
     }}
 
-{CreationMethods("TestProvider", 1)}
+{CreationMethods("TestProvider", 1, json)}
 }}
 ";
             var provider = CreateCodeRefactoringProviderForDataStructure();
@@ -141,7 +142,7 @@ class TestProvider
         Obj = obj;
     }}
 
-{CreationMethods("TestProvider", 1)}
+{CreationMethods("TestProvider", 1, json)}
 }}
 ";
             var provider = CreateCodeRefactoringProviderForDataStructure();
@@ -173,7 +174,7 @@ class TestProvider
         Values = values;
     }}
 
-{CreationMethods("TestProvider", 1)}
+{CreationMethods("TestProvider", 1, json)}
 }}
 ";
             var provider = CreateCodeRefactoringProviderForDataStructure();
@@ -216,7 +217,7 @@ class TestProvider
         Values = values;
     }}
 
-{CreationMethods("TestProvider", 1)}
+{CreationMethods("TestProvider", 1, json)}
 }}
 ";
             var provider = CreateCodeRefactoringProviderForDataStructure();
@@ -248,7 +249,7 @@ class TestProvider
         Values = values;
     }}
 
-{CreationMethods("TestProvider", 1)}
+{CreationMethods("TestProvider", 1, json)}
 }}
 ";
             var provider = CreateCodeRefactoringProviderForDataStructure();
@@ -291,7 +292,7 @@ class TestProvider
         Values = values;
     }}
 
-{CreationMethods("TestProvider", 1)}
+{CreationMethods("TestProvider", 1, json)}
 }}
 ";
             var provider = CreateCodeRefactoringProviderForDataStructure();
@@ -305,7 +306,7 @@ class TestProvider
             return new JsonProviderCodeRefactoringProvider();
         }
 
-        string CreationMethods(string typeName, int indentationLevel)
+        string CreationMethods(string typeName, int indentationLevel, string sampleData)
         {
             var lines = new[]
             {
@@ -316,6 +317,12 @@ class TestProvider
                 "        var data = await client.GetStringAsync(uri);",
                 "        return FromData(data);",
                 "    }",
+                "}",
+                "",
+                $"public static {typeName} GetSample()",
+                "{",
+                $"    var data = \"{sampleData.Replace(" ", "")}\";",
+                "    return FromData(data);",
                 "}",
                 "",
                 $"public static {typeName} FromData(string data)",

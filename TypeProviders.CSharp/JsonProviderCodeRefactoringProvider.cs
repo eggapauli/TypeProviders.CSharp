@@ -78,9 +78,20 @@ namespace TypeProviders.CSharp
             Uri sampleDataUri;
             if (Uri.TryCreate(sampleData, UriKind.Absolute, out sampleDataUri))
             {
-                using (var client = new HttpClient())
                 {
-                    var data = await client.GetStringAsync(sampleDataUri);
+                    using (var client = new HttpClient())
+                    {
+                        var request = new HttpRequestMessage(HttpMethod.Get, sampleDataUri);
+                        request.Headers.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json"));
+                        request.Headers.UserAgent.Add(new System.Net.Http.Headers.ProductInfoHeaderValue("TypeProviders.CSharp", "0.0.1"));
+                        var response = await client.SendAsync(request);
+                        if (!response.IsSuccessStatusCode)
+                        {
+                            throw new NotifyUserException($"Getting sample data from \"{sampleDataUri}\" failed with status code {response.StatusCode}");
+                        }
+                        var data = await response.Content.ReadAsStringAsync();
+                        return JToken.Parse(data);
+                    }
                 }
             }
             return JToken.Parse(sampleData);
@@ -230,11 +241,16 @@ namespace TypeProviders.CSharp
 
         static MethodDeclarationSyntax GetLoadFromUriMethod(string typeName)
         {
-            //public async System.Threading.Tasks.Task<JsonProvider> FromData(System.Uri uri)
+            //public async System.Threading.Tasks.Task<JsonProvider> LoadAsync(System.Uri uri)
             //{
             //    using (var client = new System.Net.Http.HttpClient())
             //    {
-            //        var data = await client.GetStringAsync(uri);
+            //        var request = new System.Net.Http.HttpRequestMessage(System.Net.HttpMethod.Get, uri);
+            //        request.Headers.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json"));
+            //        request.Headers.UserAgent.Add(new System.Net.Http.Headers.ProductInfoHeaderValue("TypeProviders.CSharp", "0.0.1"));
+            //        var response = await client.SendAsync(request);
+            //        response.EnsureSuccessStatusCode();
+            //        var data = await response.Content.ReadAsStringAsync();
             //        return FromData(data);
             //    }
             //}
@@ -255,7 +271,119 @@ namespace TypeProviders.CSharp
                                     (VariableDeclaration(IdentifierName("var"))
                                         .WithVariables
                                             (SingletonSeparatedList
-                                                (VariableDeclarator("data")
+                                                (VariableDeclarator("request")
+                                                    .WithInitializer
+                                                        (EqualsValueClause
+                                                            (ObjectCreationExpression
+                                                                (IdentifierName("System.Net.Http.HttpRequestMessage"))
+                                                                .WithArgumentList
+                                                                    (ArgumentList
+                                                                        (SeparatedList
+                                                                            (new[]
+                                                                            {
+                                                                                Argument
+                                                                                    (MemberAccessExpression
+                                                                                        (SyntaxKind.SimpleMemberAccessExpression
+                                                                                        , IdentifierName("System.Net.Http.HttpMethod")
+                                                                                        , IdentifierName("Get")
+                                                                                        )
+                                                                                    )
+                                                                                , Argument(IdentifierName("uri"))
+                                                                            })
+                                                                        )
+                                                                    )
+                                                            )
+                                                        )
+                                                )
+                                            )
+                                    )
+                                , ExpressionStatement
+                                    (InvocationExpression
+                                        (MemberAccessExpression
+                                            (SyntaxKind.SimpleMemberAccessExpression
+                                            , MemberAccessExpression
+                                                (SyntaxKind.SimpleMemberAccessExpression
+                                                , MemberAccessExpression
+                                                    (SyntaxKind.SimpleMemberAccessExpression
+                                                    , IdentifierName("request")
+                                                    , IdentifierName("Headers")
+                                                    )
+                                                , IdentifierName("Accept")
+                                                )
+                                            , IdentifierName("Add")
+                                            )
+                                        )
+                                        .WithArgumentList
+                                            (ArgumentList
+                                                (SingletonSeparatedList
+                                                    (Argument
+                                                        (ObjectCreationExpression
+                                                            (IdentifierName("System.Net.Http.Headers.MediaTypeWithQualityHeaderValue"))
+                                                            .WithArgumentList
+                                                                (ArgumentList
+                                                                    (SingletonSeparatedList
+                                                                        (Argument
+                                                                            (LiteralExpression
+                                                                                (SyntaxKind.StringLiteralExpression)
+                                                                                .WithToken(Literal("application/json"))
+                                                                            )
+                                                                        )
+                                                                    )
+                                                                )
+                                                        )
+                                                    )
+                                                )
+                                            )
+                                    )
+                                , ExpressionStatement
+                                    (InvocationExpression
+                                        (MemberAccessExpression
+                                            (SyntaxKind.SimpleMemberAccessExpression
+                                            , MemberAccessExpression
+                                                (SyntaxKind.SimpleMemberAccessExpression
+                                                , MemberAccessExpression
+                                                    (SyntaxKind.SimpleMemberAccessExpression
+                                                    , IdentifierName("request")
+                                                    , IdentifierName("Headers")
+                                                    )
+                                                , IdentifierName("UserAgent")
+                                                )
+                                            , IdentifierName("Add")
+                                            )
+                                        )
+                                        .WithArgumentList
+                                            (ArgumentList
+                                                (SingletonSeparatedList
+                                                    (Argument
+                                                        (ObjectCreationExpression
+                                                            (IdentifierName("System.Net.Http.Headers.ProductInfoHeaderValue"))
+                                                            .WithArgumentList
+                                                                (ArgumentList
+                                                                    (SeparatedList
+                                                                        (new[] {
+                                                                            Argument
+                                                                                (LiteralExpression
+                                                                                    (SyntaxKind.StringLiteralExpression)
+                                                                                    .WithToken(Literal("TypeProviders.CSharp"))
+                                                                                )
+                                                                            , Argument
+                                                                                (LiteralExpression
+                                                                                    (SyntaxKind.StringLiteralExpression)
+                                                                                    .WithToken(Literal("0.0.1"))
+                                                                                )
+                                                                        })
+                                                                    )
+                                                                )
+                                                        )
+                                                    )
+                                                )
+                                            )
+                                    )
+                                , LocalDeclarationStatement
+                                    (VariableDeclaration(IdentifierName("var"))
+                                        .WithVariables
+                                            (SingletonSeparatedList
+                                                (VariableDeclarator(Identifier("response"))
                                                     .WithInitializer
                                                         (EqualsValueClause
                                                             (AwaitExpression
@@ -263,9 +391,48 @@ namespace TypeProviders.CSharp
                                                                     (MemberAccessExpression
                                                                         (SyntaxKind.SimpleMemberAccessExpression
                                                                         , IdentifierName("client")
-                                                                        , IdentifierName("GetStringAsync")
+                                                                        , IdentifierName("SendAsync")
                                                                         )
-                                                                    , ArgumentList(SingletonSeparatedList(Argument(IdentifierName("uri"))))
+                                                                    )
+                                                                    .WithArgumentList
+                                                                        (ArgumentList
+                                                                            (SingletonSeparatedList
+                                                                                (Argument(IdentifierName("request")))
+                                                                            )
+                                                                        )
+                                                                )
+                                                            )
+                                                        )
+                                                )
+                                            )
+                                    )
+                                , ExpressionStatement
+                                    (InvocationExpression
+                                        (MemberAccessExpression
+                                            (SyntaxKind.SimpleMemberAccessExpression
+                                            , IdentifierName("response")
+                                            , IdentifierName("EnsureSuccessStatusCode")
+                                            )
+                                        )
+                                    )
+                                , LocalDeclarationStatement
+                                    (VariableDeclaration(IdentifierName("var"))
+                                        .WithVariables
+                                            (SingletonSeparatedList
+                                                (VariableDeclarator("data")
+                                                    .WithInitializer
+                                                        (EqualsValueClause
+                                                            (AwaitExpression
+                                                                (InvocationExpression
+                                                                    (MemberAccessExpression
+                                                                        (SyntaxKind.SimpleMemberAccessExpression
+                                                                        , MemberAccessExpression
+                                                                            (SyntaxKind.SimpleMemberAccessExpression
+                                                                            , IdentifierName("response")
+                                                                            , IdentifierName("Content")
+                                                                            )
+                                                                        , IdentifierName("ReadAsStringAsync")
+                                                                        )
                                                                     )
                                                                 )
                                                             )

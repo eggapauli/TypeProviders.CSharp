@@ -4,6 +4,7 @@ using Microsoft.CodeAnalysis.CodeRefactorings;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Formatting;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
@@ -57,27 +58,44 @@ namespace TypeProviders.CSharp
 
         async Task<Document> UpdateTypeProviderAsync(Document document, ClassDeclarationSyntax typeDecl, string sampleData, CancellationToken ct)
         {
-            var data = await GetData(sampleData);
+            var syntaxRoot = await document.GetSyntaxRootAsync(ct);
+            try
+            {
+                var data = await GetData(sampleData, ct);
 
-            var dataEntries = ParseData(typeDecl.Identifier.Text, data).ToList();
-            var typeName = ParseTypeName(typeDecl.Identifier.Text);
-            var rootEntry = new HierarchicalDataEntry(typeName, typeName.ToString(), typeName, dataEntries);
+                var dataEntries = ParseData(typeDecl.Identifier.Text, data).ToList();
+                var typeName = ParseTypeName(typeDecl.Identifier.Text);
+                var rootEntry = new HierarchicalDataEntry(typeName, typeName.ToString(), typeName, dataEntries);
 
-            var members = GetMembers(rootEntry)
-                .Concat(GetCreationMethods(rootEntry, data));
+                var members = GetMembers(rootEntry)
+                    .Concat(GetCreationMethods(rootEntry, data));
 
-            var newTypeDecl = typeDecl
-                .WithMembers(List(members))
-                .WithAdditionalAnnotations(Formatter.Annotation);
-            var syntaxRoot = await document.GetSyntaxRootAsync();
-            return document.WithSyntaxRoot(syntaxRoot.ReplaceNode(typeDecl, newTypeDecl));
+                var newTypeDecl = typeDecl
+                    .WithMembers(List(members))
+                    .WithAdditionalAnnotations(Formatter.Annotation);
+                return document.WithSyntaxRoot(syntaxRoot.ReplaceNode(typeDecl, newTypeDecl));
+            }
+            catch(NotifyUserException e)
+            {
+                var newTypeDecl = typeDecl
+                    .WithMembers(List<MemberDeclarationSyntax>())
+                    .WithOpenBraceToken
+                        (Token(SyntaxKind.OpenBraceToken)
+                            .WithTrailingTrivia
+                                (CarriageReturnLineFeed
+                                , Comment($"/* {e.Message} */")
+                                , CarriageReturnLineFeed)
+                        );
+                return document.WithSyntaxRoot(syntaxRoot.ReplaceNode(typeDecl, newTypeDecl));
+            }
         }
 
-        static async Task<JToken> GetData(string sampleData)
+        static async Task<JToken> GetData(string sampleData, CancellationToken ct)
         {
             Uri sampleDataUri;
             if (Uri.TryCreate(sampleData, UriKind.Absolute, out sampleDataUri))
             {
+                if (sampleDataUri.Scheme == "http" || sampleDataUri.Scheme == "https")
                 {
                     using (var client = new HttpClient())
                     {
@@ -87,14 +105,27 @@ namespace TypeProviders.CSharp
                         var response = await client.SendAsync(request);
                         if (!response.IsSuccessStatusCode)
                         {
-                            throw new NotifyUserException($"Getting sample data from \"{sampleDataUri}\" failed with status code {response.StatusCode}");
+                            throw new NotifyUserException($"Getting sample data from \"{sampleDataUri}\" failed with status code {(int)response.StatusCode} ({response.StatusCode}).");
                         }
                         var data = await response.Content.ReadAsStringAsync();
-                        return JToken.Parse(data);
+                        return ParseData(data);
                     }
                 }
+                throw new NotifyUserException($"Getting sample data from \"{sampleDataUri}\" is not supported. Only \"http\" and \"https\" schemes are allowed.");
             }
-            return JToken.Parse(sampleData);
+            return ParseData(sampleData);
+        }
+
+        static JToken ParseData(string data)
+        {
+            try
+            {
+                return JToken.Parse(data);
+            }
+            catch (JsonReaderException e)
+            {
+                throw new NotifyUserException($"An error occured while parsing \"{data}\": {e.Message}", e);
+            }
         }
 
         static IEnumerable<HierarchicalDataEntry> ParseData(string typePrefix, JToken data)

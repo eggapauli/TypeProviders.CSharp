@@ -301,6 +301,33 @@ class TestProvider
             text.ToString().Should().Be(expectedCode);
         }
 
+        [Theory]
+        [InlineData("Invalid json data", "An error occured while parsing \"Invalid json data\": Error parsing positive infinity value. Path '', line 0, position 0.")]
+        [InlineData("http://example.com/not-existing-url", "Getting sample data from \"http://example.com/not-existing-url\" failed with status code 404 (NotFound).")]
+        [InlineData("file:///C:/data.json", "Getting sample data from \"file:///C:/data.json\" is not supported. Only \"http\" and \"https\" schemes are allowed.")]
+        public async Task ShouldShowMessageWhenSampleDataIsInvalid(string sampleData, string errorMessage)
+        {
+            var attribute = $@"[TypeProviders.CSharp.Providers.JsonProvider(""{sampleData}"")]";
+
+            var code = attribute + @"
+class TestProvider
+{
+    pulbic int A { get; private set; }
+}
+";
+
+            var expectedCode = attribute + $@"
+class TestProvider
+{{
+    /* {errorMessage} */
+}}
+";
+            var provider = CreateCodeRefactoringProviderForDataStructure();
+            var document = await GetAndApplyRefactoring(code, provider);
+            var text = await document.GetTextAsync();
+            text.ToString().Should().Be(expectedCode);
+        }
+
         static JsonProviderCodeRefactoringProvider CreateCodeRefactoringProviderForDataStructure()
         {
             return new JsonProviderCodeRefactoringProvider();

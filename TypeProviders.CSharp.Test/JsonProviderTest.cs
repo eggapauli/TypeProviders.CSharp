@@ -301,6 +301,62 @@ class TestProvider
             text.ToString().Should().Be(expectedCode);
         }
 
+        [Fact]
+        public async Task ShouldRefactorAccordingToSimpleArray()
+        {
+            var json = "[1, 2, 3]";
+            var attribute = $@"[TypeProviders.CSharp.Providers.JsonProvider(""{json}"")]";
+
+            var code = attribute + @"
+class TestProvider
+{
+}
+";
+
+            var expectedCode = attribute + $@"
+class TestProvider
+{{
+{CreationMethods("System.Collections.Generic.IReadOnlyList<int>", 1, json)}
+}}
+";
+            var provider = CreateCodeRefactoringProviderForDataStructure();
+            var document = await GetAndApplyRefactoring(code, provider);
+            var text = await document.GetTextAsync();
+            text.ToString().Should().Be(expectedCode);
+        }
+
+        [Fact]
+        public async Task ShouldRefactorAccordingToObjectArray()
+        {
+            var json = @"[{ \""Value\"": 1 }, { \""Value\"": 2 }, { \""Value\"": 3 }]";
+            var attribute = $@"[TypeProviders.CSharp.Providers.JsonProvider(""{json}"")]";
+
+            var code = attribute + @"
+class TestProvider
+{
+}
+";
+
+            var expectedCode = attribute + $@"
+class TestProvider
+{{
+    public int Value {{ get; private set; }}
+
+    [Newtonsoft.Json.JsonConstructor]
+    private TestProvider(int value)
+    {{
+        Value = value;
+    }}
+
+{CreationMethods("System.Collections.Generic.IReadOnlyList<TestProvider>", 1, json)}
+}}
+";
+            var provider = CreateCodeRefactoringProviderForDataStructure();
+            var document = await GetAndApplyRefactoring(code, provider);
+            var text = await document.GetTextAsync();
+            text.ToString().Should().Be(expectedCode);
+        }
+
         [Theory]
         [InlineData("Invalid json data", "An error occured while parsing \"Invalid json data\": Error parsing positive infinity value. Path '', line 0, position 0.")]
         [InlineData("http://example.com/not-existing-url", "Getting sample data from \"http://example.com/not-existing-url\" failed with status code 404 (NotFound).")]

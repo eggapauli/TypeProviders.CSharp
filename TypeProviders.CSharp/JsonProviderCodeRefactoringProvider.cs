@@ -63,12 +63,10 @@ namespace TypeProviders.CSharp
             {
                 var data = await GetData(sampleData, ct);
 
-                var dataEntries = ParseData(typeDecl.Identifier.Text, data).ToList();
-                var typeName = ParseTypeName(typeDecl.Identifier.Text);
-                var rootEntry = new HierarchicalDataEntry(typeName, typeName.ToString(), typeName, dataEntries);
+                var entry = ParseData(typeDecl.Identifier.Text, data, "");
 
-                var members = GetMembers(rootEntry)
-                    .Concat(GetCreationMethods(rootEntry, data));
+                var members = GetMembers(entry)
+                    .Concat(GetCreationMethods(entry, data));
 
                 var newTypeDecl = typeDecl
                     .WithMembers(List(members))
@@ -108,15 +106,15 @@ namespace TypeProviders.CSharp
                             throw new NotifyUserException($"Getting sample data from \"{sampleDataUri}\" failed with status code {(int)response.StatusCode} ({response.StatusCode}).");
                         }
                         var data = await response.Content.ReadAsStringAsync();
-                        return ParseData(data);
+                        return ParseJsonSafe(data);
                     }
                 }
                 throw new NotifyUserException($"Getting sample data from \"{sampleDataUri}\" is not supported. Only \"http\" and \"https\" schemes are allowed.");
             }
-            return ParseData(sampleData);
+            return ParseJsonSafe(sampleData);
         }
 
-        static JToken ParseData(string data)
+        static JToken ParseJsonSafe(string data)
         {
             try
             {
@@ -128,70 +126,96 @@ namespace TypeProviders.CSharp
             }
         }
 
-        static IEnumerable<HierarchicalDataEntry> ParseData(string typePrefix, JToken data)
+        static HierarchicalDataEntry ParseData(string typePrefix, JToken data, string propertyName)
         {
             var jObj = data as JObject;
             if (jObj != null)
             {
-                foreach (var property in jObj.Properties())
+                var subTypeName = typePrefix + propertyName.ToPublicIdentifier();
+                var propertyType = ParseTypeName(subTypeName);
+                var subProperties = jObj.Properties()
+                    .Select(p => ParseData(typePrefix, p.Value, p.Name.ToPublicIdentifier()));
+                return new HierarchicalDataEntry
+                    (propertyType
+                    , propertyName
+                    , propertyType
+                    , subProperties
+                    );
+            }
+
+            var jArr = data as JArray;
+            if (jArr != null)
+            {
+                var format = "{0}";
+                JToken child = jArr;
+                while (child.Type == JTokenType.Array)
                 {
-                    if (property.Value.Type == JTokenType.Object)
-                    {
-                        var subTypeName = typePrefix + GetIdentifierName(property.Name);
-                        var propertyType = ParseTypeName(subTypeName);
-                        var propertyName = GetIdentifierName(property.Name);
-                        var subProperties = ParseData(typePrefix, property.Value);
-                        yield return new HierarchicalDataEntry(propertyType, propertyName, propertyType, subProperties);
-                    }
-                    else if (property.Value.Type == JTokenType.Array)
-                    {
-                        var format = "{0}";
-                        var child = property.Value;
-                        while (child.Type == JTokenType.Array)
-                        {
-                            child = child[0];
-                            format = $"System.Collections.Generic.IReadOnlyList<{ format }>";
-                        }
+                    child = child[0];
+                    format = $"System.Collections.Generic.IReadOnlyList<{ format }>";
+                }
 
-                        var type = child.Type == JTokenType.Object
-                            ? ParseTypeName(typePrefix + GetIdentifierName(property.Name) + "Item")
-                            : GetTypeFromToken(child);
-
-                        var propertyType = ParseTypeName(string.Format(format, type.ToString()));
-                        var propertyName = GetIdentifierName(property.Name);
-                        var subProperties = ParseData(typePrefix, child);
-                        yield return new HierarchicalDataEntry(propertyType, propertyName, type, subProperties);
-                    }
-                    else
-                    {
-                        var type = GetTypeFromToken(property.Value);
-                        var propertyName = GetIdentifierName(property.Name);
-                        yield return new HierarchicalDataEntry(type, propertyName);
-                    }
+                if (string.IsNullOrEmpty(propertyName))
+                {
+                    var childEntry = ParseData(typePrefix, child, propertyName);
+                    var type = ParseTypeName(string.Format(format, childEntry.EntryType.ToString()));
+                    return new HierarchicalDataEntry
+                        (type
+                        , childEntry.PropertyName
+                        , childEntry.EntryType
+                        , childEntry.Children
+                        );
+                }
+                else
+                {
+                    var childEntry = ParseData(typePrefix, child, propertyName + "Item");
+                    var type = ParseTypeName(string.Format(format, childEntry.EntryType.ToString()));
+                    return new HierarchicalDataEntry
+                        (type
+                        , !string.IsNullOrEmpty(propertyName) ? propertyName : "Items"
+                        , childEntry.EntryType
+                        , childEntry.Children
+                        );
                 }
             }
-        }
 
+            var jValue = data as JValue;
+            if (jValue != null)
+            {
+                var type = GetTypeFromToken(jValue);
+                return new HierarchicalDataEntry
+                    (type
+                    , propertyName
+                    , type
+                    , Enumerable.Empty<HierarchicalDataEntry>());
+            }
+
+            throw new NotSupportedException("Unsupported JToken type: " + data.GetType().Name);
+        }
+        
         IEnumerable<MemberDeclarationSyntax> GetMembers(HierarchicalDataEntry dataEntry)
         {
-            foreach (var members in GetPropertiesFromData(dataEntry.Children))
+            foreach (var members in GetPropertiesFromData(dataEntry))
             {
                 yield return members;
             }
-            yield return GetConstructor(dataEntry);
+
+            if (dataEntry.Children.Count > 0)
+            {
+                yield return GetConstructor(dataEntry);
+            }
         }
 
-        IEnumerable<MemberDeclarationSyntax> GetPropertiesFromData(IReadOnlyCollection<HierarchicalDataEntry> dataEntries)
+        IEnumerable<MemberDeclarationSyntax> GetPropertiesFromData(HierarchicalDataEntry dataEntry)
         {
-            foreach (var dataEntry in dataEntries)
+            foreach (var childEntry in dataEntry.Children)
             {
-                yield return GetPropertyDeclaration(dataEntry.PropertyType, dataEntry.PropertyName);
+                yield return GetPropertyDeclaration(childEntry.PropertyType, childEntry.PropertyName);
 
-                if (dataEntry.Children.Count > 0)
+                if (childEntry.Children.Count > 0)
                 {
-                    var subTypeDecl = ClassDeclaration(dataEntry.EntryType.ToString())
-                        .WithModifiers(TokenList(Token(SyntaxKind.PublicKeyword)));
-                    var subTypeMembers = GetMembers(dataEntry);
+                    var subTypeDecl = ClassDeclaration(childEntry.EntryType.ToString())
+                            .WithModifiers(TokenList(Token(SyntaxKind.PublicKeyword)));
+                    var subTypeMembers = GetMembers(childEntry);
                     yield return subTypeDecl.WithMembers(List(subTypeMembers));
                 }
             }
@@ -199,13 +223,12 @@ namespace TypeProviders.CSharp
 
         static PropertyDeclarationSyntax GetPropertyDeclaration(TypeSyntax type, string propertyName)
         {
-            return
-                PropertyDeclaration(type, propertyName)
-                    .WithModifiers(TokenList(Token(SyntaxKind.PublicKeyword)))
-                    .WithAccessorList(
-                        AccessorList(
-                            List(
-                                new[]
+            return PropertyDeclaration(type, propertyName)
+                .WithModifiers(TokenList(Token(SyntaxKind.PublicKeyword)))
+                .WithAccessorList
+                    (AccessorList
+                        (List
+                            (new[]
                                 {
                                     AccessorDeclaration(SyntaxKind.GetAccessorDeclaration)
                                         .WithSemicolonToken(Token(SyntaxKind.SemicolonToken)),
@@ -220,9 +243,10 @@ namespace TypeProviders.CSharp
 
         static IEnumerable<MemberDeclarationSyntax> GetCreationMethods(HierarchicalDataEntry dataEntry, JToken sampleData)
         {
-            yield return GetLoadFromUriMethod(dataEntry.EntryType.ToString());
-            yield return GetGetSampleMethod(dataEntry.EntryType.ToString(), sampleData);
-            yield return GetFromStringMethod(dataEntry.EntryType.ToString());
+            var typeName = dataEntry.PropertyType.ToString();
+            yield return GetLoadFromUriMethod(typeName);
+            yield return GetGetSampleMethod(typeName, sampleData);
+            yield return GetFromStringMethod(typeName);
         }
 
         static MemberDeclarationSyntax GetConstructor(HierarchicalDataEntry dataEntry)
@@ -311,16 +335,17 @@ namespace TypeProviders.CSharp
                                                                     (ArgumentList
                                                                         (SeparatedList
                                                                             (new[]
-                                                                            {
-                                                                                Argument
-                                                                                    (MemberAccessExpression
-                                                                                        (SyntaxKind.SimpleMemberAccessExpression
-                                                                                        , IdentifierName("System.Net.Http.HttpMethod")
-                                                                                        , IdentifierName("Get")
+                                                                                {
+                                                                                    Argument
+                                                                                        (MemberAccessExpression
+                                                                                            (SyntaxKind.SimpleMemberAccessExpression
+                                                                                            , IdentifierName("System.Net.Http.HttpMethod")
+                                                                                            , IdentifierName("Get")
+                                                                                            )
                                                                                         )
-                                                                                    )
-                                                                                , Argument(IdentifierName("uri"))
-                                                                            })
+                                                                                    , Argument(IdentifierName("uri"))
+                                                                                }
+                                                                            )
                                                                         )
                                                                     )
                                                             )
@@ -391,18 +416,20 @@ namespace TypeProviders.CSharp
                                                             .WithArgumentList
                                                                 (ArgumentList
                                                                     (SeparatedList
-                                                                        (new[] {
-                                                                            Argument
-                                                                                (LiteralExpression
-                                                                                    (SyntaxKind.StringLiteralExpression)
-                                                                                    .WithToken(Literal("TypeProviders.CSharp"))
-                                                                                )
-                                                                            , Argument
-                                                                                (LiteralExpression
-                                                                                    (SyntaxKind.StringLiteralExpression)
-                                                                                    .WithToken(Literal("0.0.1"))
-                                                                                )
-                                                                        })
+                                                                        (new[]
+                                                                            {
+                                                                                Argument
+                                                                                    (LiteralExpression
+                                                                                        (SyntaxKind.StringLiteralExpression)
+                                                                                        .WithToken(Literal("TypeProviders.CSharp"))
+                                                                                    )
+                                                                                , Argument
+                                                                                    (LiteralExpression
+                                                                                        (SyntaxKind.StringLiteralExpression)
+                                                                                        .WithToken(Literal("0.0.1"))
+                                                                                    )
+                                                                            }
+                                                                        )
                                                                     )
                                                                 )
                                                         )
@@ -576,11 +603,6 @@ namespace TypeProviders.CSharp
                             )
                         )
                     );
-        }
-
-        static string GetIdentifierName(string jsonPropertyName)
-        {
-            return char.ToUpper(jsonPropertyName[0]) + jsonPropertyName.Substring(1);
         }
 
         static TypeSyntax GetTypeFromToken(JToken token)

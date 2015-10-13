@@ -50,11 +50,12 @@ namespace TypeProviders.CSharp
             try
             {
                 var data = await GetData(sampleData, ct).ConfigureAwait(false);
+                var json = ParseJsonSafe(data);
 
-                var entry = ParseData(typeDecl.Identifier.Text, data, "");
+                var entry = ParseData(typeDecl.Identifier.Text, json, "");
 
                 var members = GetMembers(entry)
-                    .Concat(GetCreationMethods(entry, data));
+                    .Concat(GetCreationMethods(entry, json));
 
                 var newTypeDecl = typeDecl
                     .WithMembers(List(members))
@@ -76,7 +77,7 @@ namespace TypeProviders.CSharp
             }
         }
 
-        static async Task<JToken> GetData(string sampleData, CancellationToken ct)
+        static async Task<string> GetData(string sampleData, CancellationToken ct)
         {
             Uri sampleDataUri;
             if (Uri.TryCreate(sampleData, UriKind.Absolute, out sampleDataUri))
@@ -94,12 +95,12 @@ namespace TypeProviders.CSharp
                             throw new NotifyUserException($"Getting sample data from \"{sampleDataUri}\" failed with status code {(int)response.StatusCode} ({response.StatusCode}).");
                         }
                         var data = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
-                        return ParseJsonSafe(data);
+                        return data;
                     }
                 }
                 throw new NotifyUserException($"Getting sample data from \"{sampleDataUri}\" is not supported. Only \"http\" and \"https\" schemes are allowed.");
             }
-            return ParseJsonSafe(sampleData);
+            return sampleData;
         }
 
         static JToken ParseJsonSafe(string data)

@@ -34,29 +34,17 @@ namespace TypeProviders.CSharp
             var typeDecl = node as ClassDeclarationSyntax;
             if (typeDecl == null) return;
 
-            var compilation = await context.Document.Project.GetCompilationAsync(context.CancellationToken).ConfigureAwait(false);
-            var attributeSymbol = compilation.GetTypeByMetadataName(AttributeFullName);
-            if (attributeSymbol == null) return;
-
             var semanticModel = await context.Document.GetSemanticModelAsync(context.CancellationToken).ConfigureAwait(false);
-            var typeSymbol = semanticModel.GetDeclaredSymbol(typeDecl);
 
-            var attribute = typeSymbol.GetAttributes()
-                .FirstOrDefault(attr => attr.AttributeClass.Equals(attributeSymbol));
-            if (attribute == null) return;
+            var sampleData = TypeProviderHelper.TryGetTypeProviderSampleData(typeDecl, AttributeFullName, semanticModel);
+            if (!sampleData.HasValue) return;
 
-            var sampleSourceArgument = attribute.ConstructorArguments.FirstOrDefault();
-            if (sampleSourceArgument.IsNull) return;
-
-            var sampleData = sampleSourceArgument.Value as string;
-            if (sampleData == null) return;
-
-            var action = CodeAction.Create("Synchronize type provider with sample data", c => UpdateTypeProviderAsync(context.Document, typeDecl, sampleData, c));
+            var action = CodeAction.Create("Synchronize type provider with sample data", c => UpdateTypeProviderAsync(context.Document, typeDecl, sampleData.Value, c));
 
             context.RegisterRefactoring(action);
         }
 
-        async Task<Document> UpdateTypeProviderAsync(Document document, ClassDeclarationSyntax typeDecl, string sampleData, CancellationToken ct)
+        static async Task<Document> UpdateTypeProviderAsync(Document document, ClassDeclarationSyntax typeDecl, string sampleData, CancellationToken ct)
         {
             var syntaxRoot = await document.GetSyntaxRootAsync(ct);
             try
@@ -192,7 +180,7 @@ namespace TypeProviders.CSharp
             throw new NotSupportedException("Unsupported JToken type: " + data.GetType().Name);
         }
         
-        IEnumerable<MemberDeclarationSyntax> GetMembers(HierarchicalDataEntry dataEntry)
+        static IEnumerable<MemberDeclarationSyntax> GetMembers(HierarchicalDataEntry dataEntry)
         {
             foreach (var members in GetPropertiesFromData(dataEntry))
             {
@@ -205,7 +193,7 @@ namespace TypeProviders.CSharp
             }
         }
 
-        IEnumerable<MemberDeclarationSyntax> GetPropertiesFromData(HierarchicalDataEntry dataEntry)
+        static IEnumerable<MemberDeclarationSyntax> GetPropertiesFromData(HierarchicalDataEntry dataEntry)
         {
             foreach (var childEntry in dataEntry.Children)
             {

@@ -18,16 +18,16 @@ namespace TypeProviders.CSharp.Test
     public class JsonProviderTest
     {
         [Fact]
-        public async Task ShouldNotHaveRefactoringWhenAttributeNotSet()
+        public void ShouldNotHaveRefactoringWhenAttributeNotSet()
         {
             var code = "class TestProvider { }";
             var provider = CreateCodeRefactoringProviderForDataStructure();
-            var action = await GetRefactoring(code, provider);
+            var action = GetRefactoring(code, provider);
             action.Should().BeNull();
         }
 
         [Fact]
-        public async Task ShouldNotHaveRefactoringWhenSampleDataArgumentIsMissing()
+        public void ShouldNotHaveRefactoringWhenSampleDataArgumentIsMissing()
         {
             var code = @"
 [TypeProviders.CSharp.Providers.JsonProvider]
@@ -36,12 +36,12 @@ class TestProvider
 }
 ";
             var provider = CreateCodeRefactoringProviderForDataStructure();
-            var action = await GetRefactoring(code, provider);
+            var action = GetRefactoring(code, provider);
             action.Should().BeNull();
         }
 
         [Fact]
-        public async Task ShouldNotHaveRefactoringWhenSampleDataArgumentHasWrongType()
+        public void ShouldNotHaveRefactoringWhenSampleDataArgumentHasWrongType()
         {
             var code = @"
 [TypeProviders.CSharp.Providers.JsonProvider(5)]
@@ -50,12 +50,12 @@ class TestProvider
 }
 ";
             var provider = CreateCodeRefactoringProviderForDataStructure();
-            var action = await GetRefactoring(code, provider);
+            var action = GetRefactoring(code, provider);
             action.Should().BeNull();
         }
 
         [Fact]
-        public async Task ShouldHaveRefactoringForSimpleSampleData()
+        public void ShouldHaveRefactoringForSimpleSampleData()
         {
             var code = @"
 [TypeProviders.CSharp.Providers.JsonProvider(""{ \""asd\"": \""qwe\"" }"")]
@@ -64,7 +64,7 @@ class TestProvider
 }
 ";
             var provider = CreateCodeRefactoringProviderForDataStructure();
-            var action = await GetRefactoring(code, provider);
+            var action = GetRefactoring(code, provider);
             action.Should().NotBeNull();
         }
 
@@ -77,7 +77,7 @@ class TestProvider
         [InlineData(@"\""7E22EDE9-6D0F-48C2-A280-B36DC859435D\""", "System.Guid")]
         [InlineData(@"\""05:04:03\""", "System.TimeSpan")]
         [InlineData(@"\""http://example.com/path?query#hash\""", "System.Uri")]
-        public async Task ShouldRefactorAccordingToSimpleSampleData(string jsonValue, string expectedType)
+        public void ShouldRefactorAccordingToSimpleSampleData(string jsonValue, string expectedType)
         {
             var json = $@"{{ \""Value\"": {jsonValue} }}";
             var attribute = $@"[TypeProviders.CSharp.Providers.JsonProvider(""{json}"")]";
@@ -103,13 +103,13 @@ class TestProvider
 }}
 ";
             var provider = CreateCodeRefactoringProviderForDataStructure();
-            var document = await GetAndApplyRefactoring(code, provider);
-            var text = await document.GetTextAsync();
+            var document = GetAndApplyRefactoring(code, provider);
+            var text = document.GetTextAsync().Result;
             text.ToString().Should().Be(expectedCode);
         }
 
         [Fact]
-        public async Task ShouldRefactorAccordingToSampleDataWithNestedObject()
+        public void ShouldRefactorAccordingToSampleDataWithNestedObject()
         {
             var json = @"{ \""Obj\"": { \""Value\"": 5 } }";
             var attribute = $@"[TypeProviders.CSharp.Providers.JsonProvider(""{json}"")]";
@@ -146,13 +146,13 @@ class TestProvider
 }}
 ";
             var provider = CreateCodeRefactoringProviderForDataStructure();
-            var document = await GetAndApplyRefactoring(code, provider);
-            var text = await document.GetTextAsync();
+            var document = GetAndApplyRefactoring(code, provider);
+            var text = document.GetTextAsync().Result;
             text.ToString().Should().Be(expectedCode);
         }
 
         [Fact]
-        public async Task ShouldRefactorAccordingToSampleDataWithSimpleArray()
+        public void ShouldRefactorAccordingToSampleDataWithSimpleArray()
         {
             var json = @"{ \""Values\"": [ 1, 2, 3 ] }";
             var attribute = $@"[TypeProviders.CSharp.Providers.JsonProvider(""{json}"")]";
@@ -178,13 +178,13 @@ class TestProvider
 }}
 ";
             var provider = CreateCodeRefactoringProviderForDataStructure();
-            var document = await GetAndApplyRefactoring(code, provider);
-            var text = await document.GetTextAsync();
+            var document = GetAndApplyRefactoring(code, provider);
+            var text = document.GetTextAsync().Result;
             text.ToString().Should().Be(expectedCode);
         }
 
         [Fact]
-        public async Task ShouldRefactorAccordingToSampleDataWithArrayOfObjects()
+        public void ShouldRefactorAccordingToSampleDataWithArrayOfObjects()
         {
             var json = @"{ \""Values\"": [ { \""Value\"": 1 }, { \""Value\"": 2 }, { \""Value\"": 3 } ] }";
             var attribute = $@"[TypeProviders.CSharp.Providers.JsonProvider(""{json}"")]";
@@ -221,13 +221,13 @@ class TestProvider
 }}
 ";
             var provider = CreateCodeRefactoringProviderForDataStructure();
-            var document = await GetAndApplyRefactoring(code, provider);
-            var text = await document.GetTextAsync();
+            var document = GetAndApplyRefactoring(code, provider);
+            var text = document.GetTextAsync().Result;
             text.ToString().Should().Be(expectedCode);
         }
 
         [Fact]
-        public async Task ShouldRefactorAccordingToSampleDataWithArrayOfSimpleArray()
+        public void ShouldRefactorAccordingToSampleDataWithArrayOfSimpleArray()
         {
             var json = @"{ \""Values\"": [ [ 1, 2 ], [ 3, 4 ] ] }";
             var attribute = $@"[TypeProviders.CSharp.Providers.JsonProvider(""{json}"")]";
@@ -253,13 +253,13 @@ class TestProvider
 }}
 ";
             var provider = CreateCodeRefactoringProviderForDataStructure();
-            var document = await GetAndApplyRefactoring(code, provider);
-            var text = await document.GetTextAsync();
+            var document = GetAndApplyRefactoring(code, provider);
+            var text = document.GetTextAsync().Result;
             text.ToString().Should().Be(expectedCode);
         }
 
         [Fact]
-        public async Task ShouldRefactorAccordingToSampleDataWithArrayOfArrayOfObject()
+        public void ShouldRefactorAccordingToSampleDataWithArrayOfArrayOfObject()
         {
             var json = @"{ \""Values\"": [ [ { \""Value\"": 1 }, { \""Value\"": 2 } ], [ { \""Value\"": 3 }, { \""Value\"": 4 } ] ] }";
             var attribute = $@"[TypeProviders.CSharp.Providers.JsonProvider(""{json}"")]";
@@ -296,13 +296,13 @@ class TestProvider
 }}
 ";
             var provider = CreateCodeRefactoringProviderForDataStructure();
-            var document = await GetAndApplyRefactoring(code, provider);
-            var text = await document.GetTextAsync();
+            var document = GetAndApplyRefactoring(code, provider);
+            var text = document.GetTextAsync().Result;
             text.ToString().Should().Be(expectedCode);
         }
 
         [Fact]
-        public async Task ShouldRefactorAccordingToSimpleArray()
+        public void ShouldRefactorAccordingToSimpleArray()
         {
             var json = "[1, 2, 3]";
             var attribute = $@"[TypeProviders.CSharp.Providers.JsonProvider(""{json}"")]";
@@ -320,13 +320,13 @@ class TestProvider
 }}
 ";
             var provider = CreateCodeRefactoringProviderForDataStructure();
-            var document = await GetAndApplyRefactoring(code, provider);
-            var text = await document.GetTextAsync();
+            var document = GetAndApplyRefactoring(code, provider);
+            var text = document.GetTextAsync().Result;
             text.ToString().Should().Be(expectedCode);
         }
 
         [Fact]
-        public async Task ShouldRefactorAccordingToObjectArray()
+        public void ShouldRefactorAccordingToObjectArray()
         {
             var json = @"[{ \""Value\"": 1 }, { \""Value\"": 2 }, { \""Value\"": 3 }]";
             var attribute = $@"[TypeProviders.CSharp.Providers.JsonProvider(""{json}"")]";
@@ -352,8 +352,8 @@ class TestProvider
 }}
 ";
             var provider = CreateCodeRefactoringProviderForDataStructure();
-            var document = await GetAndApplyRefactoring(code, provider);
-            var text = await document.GetTextAsync();
+            var document = GetAndApplyRefactoring(code, provider);
+            var text = document.GetTextAsync().Result;
             text.ToString().Should().Be(expectedCode);
         }
 
@@ -361,7 +361,7 @@ class TestProvider
         [InlineData("Invalid json data", "An error occured while parsing \"Invalid json data\": Error parsing positive infinity value. Path '', line 0, position 0.")]
         [InlineData("http://example.com/not-existing-url", "Getting sample data from \"http://example.com/not-existing-url\" failed with status code 404 (NotFound).")]
         [InlineData("file:///C:/data.json", "Getting sample data from \"file:///C:/data.json\" is not supported. Only \"http\" and \"https\" schemes are allowed.")]
-        public async Task ShouldShowMessageWhenSampleDataIsInvalid(string sampleData, string errorMessage)
+        public void ShouldShowMessageWhenSampleDataIsInvalid(string sampleData, string errorMessage)
         {
             var attribute = $@"[TypeProviders.CSharp.Providers.JsonProvider(""{sampleData}"")]";
 
@@ -379,8 +379,8 @@ class TestProvider
 }}
 ";
             var provider = CreateCodeRefactoringProviderForDataStructure();
-            var document = await GetAndApplyRefactoring(code, provider);
-            var text = await document.GetTextAsync();
+            var document = GetAndApplyRefactoring(code, provider);
+            var text = document.GetTextAsync().Result;
             text.ToString().Should().Be(expectedCode);
         }
 
@@ -432,32 +432,32 @@ class TestProvider
             return string.Join(Environment.NewLine, indentedLines);
         }
 
-        static async Task<Document> GetAndApplyRefactoring(string code, CodeRefactoringProvider codeRefactoringProvider)
+        static Document GetAndApplyRefactoring(string code, CodeRefactoringProvider codeRefactoringProvider)
         {
             var document = CreateDocument(code);
-            var action = await GetRefactoring(document, codeRefactoringProvider);
+            var action = GetRefactoring(document, codeRefactoringProvider);
             action.Should().NotBeNull("Can't apply <null> refactoring");
-            var operations = await action.GetOperationsAsync(CancellationToken.None);
+            var operations = action.GetOperationsAsync(CancellationToken.None).Result;
             var solution = operations.OfType<ApplyChangesOperation>().Single().ChangedSolution;
             var newDocument = solution.GetDocument(document.Id);
-            var syntaxRoot = await newDocument.GetSyntaxRootAsync();
-            var compilation = await newDocument.Project.GetCompilationAsync();
+            var syntaxRoot = newDocument.GetSyntaxRootAsync().Result;
+            var compilation = newDocument.Project.GetCompilationAsync().Result;
             compilation.GetDiagnostics().Should().BeEmpty();
             return newDocument;
         }
 
-        static async Task<CodeAction> GetRefactoring(string code, CodeRefactoringProvider codeRefactoringProvider)
+        static CodeAction GetRefactoring(string code, CodeRefactoringProvider codeRefactoringProvider)
         {
             var document = CreateDocument(code);
-            return await GetRefactoring(document, codeRefactoringProvider);
+            return GetRefactoring(document, codeRefactoringProvider);
         }
 
-        static async Task<CodeAction> GetRefactoring(Document document, CodeRefactoringProvider codeRefactoringProvider)
+        static CodeAction GetRefactoring(Document document, CodeRefactoringProvider codeRefactoringProvider)
         {
-            var root = await document.GetSyntaxRootAsync();
+            var root = document.GetSyntaxRootAsync().Result;
             var refactorings = new List<CodeAction>();
             var context = new CodeRefactoringContext(document, root.Span, refactorings.Add, CancellationToken.None);
-            await codeRefactoringProvider.ComputeRefactoringsAsync(context);
+            codeRefactoringProvider.ComputeRefactoringsAsync(context).Wait();
             return refactorings.SingleOrDefault();
         }
 

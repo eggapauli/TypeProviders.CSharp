@@ -91,7 +91,7 @@ class TestProvider
             var expectedCode = attribute + $@"
 class TestProvider
 {{
-    public {expectedType} Value {{ get; private set; }}
+    public {expectedType} Value {{ get; }}
 
     [Newtonsoft.Json.JsonConstructor]
     private TestProvider({expectedType} value)
@@ -123,11 +123,11 @@ class TestProvider
             var expectedCode = attribute + $@"
 class TestProvider
 {{
-    public TestProviderObj Obj {{ get; private set; }}
+    public TestProviderObj Obj {{ get; }}
 
     public class TestProviderObj
     {{
-        public int Value {{ get; private set; }}
+        public int Value {{ get; }}
 
         [Newtonsoft.Json.JsonConstructor]
         private TestProviderObj(int value)
@@ -166,7 +166,7 @@ class TestProvider
             var expectedCode = attribute + $@"
 class TestProvider
 {{
-    public System.Collections.Generic.IReadOnlyList<int> Values {{ get; private set; }}
+    public System.Collections.Generic.IReadOnlyList<int> Values {{ get; }}
 
     [Newtonsoft.Json.JsonConstructor]
     private TestProvider(System.Collections.Generic.IReadOnlyList<int> values)
@@ -198,11 +198,11 @@ class TestProvider
             var expectedCode = attribute + $@"
 class TestProvider
 {{
-    public System.Collections.Generic.IReadOnlyList<TestProviderValuesItem> Values {{ get; private set; }}
+    public System.Collections.Generic.IReadOnlyList<TestProviderValuesItem> Values {{ get; }}
 
     public class TestProviderValuesItem
     {{
-        public int Value {{ get; private set; }}
+        public int Value {{ get; }}
 
         [Newtonsoft.Json.JsonConstructor]
         private TestProviderValuesItem(int value)
@@ -241,7 +241,7 @@ class TestProvider
             var expectedCode = attribute + $@"
 class TestProvider
 {{
-    public System.Collections.Generic.IReadOnlyList<System.Collections.Generic.IReadOnlyList<int>> Values {{ get; private set; }}
+    public System.Collections.Generic.IReadOnlyList<System.Collections.Generic.IReadOnlyList<int>> Values {{ get; }}
 
     [Newtonsoft.Json.JsonConstructor]
     private TestProvider(System.Collections.Generic.IReadOnlyList<System.Collections.Generic.IReadOnlyList<int>> values)
@@ -273,11 +273,11 @@ class TestProvider
             var expectedCode = attribute + $@"
 class TestProvider
 {{
-    public System.Collections.Generic.IReadOnlyList<System.Collections.Generic.IReadOnlyList<TestProviderValuesItem>> Values {{ get; private set; }}
+    public System.Collections.Generic.IReadOnlyList<System.Collections.Generic.IReadOnlyList<TestProviderValuesItem>> Values {{ get; }}
 
     public class TestProviderValuesItem
     {{
-        public int Value {{ get; private set; }}
+        public int Value {{ get; }}
 
         [Newtonsoft.Json.JsonConstructor]
         private TestProviderValuesItem(int value)
@@ -340,7 +340,7 @@ class TestProvider
             var expectedCode = attribute + $@"
 class TestProvider
 {{
-    public int Value {{ get; private set; }}
+    public int Value {{ get; }}
 
     [Newtonsoft.Json.JsonConstructor]
     private TestProvider(int value)
@@ -368,7 +368,7 @@ class TestProvider
             var code = attribute + @"
 class TestProvider
 {
-    pulbic int A { get; private set; }
+    pulbic int A { get; }
 }
 ";
 

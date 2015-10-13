@@ -227,15 +227,9 @@ namespace TypeProviders.CSharp
                 .WithModifiers(TokenList(Token(SyntaxKind.PublicKeyword)))
                 .WithAccessorList
                     (AccessorList
-                        (List
-                            (new[]
-                                {
-                                    AccessorDeclaration(SyntaxKind.GetAccessorDeclaration)
-                                        .WithSemicolonToken(Token(SyntaxKind.SemicolonToken)),
-                                    AccessorDeclaration(SyntaxKind.SetAccessorDeclaration)
-                                        .WithModifiers(TokenList(Token(SyntaxKind.PrivateKeyword)))
-                                        .WithSemicolonToken(Token(SyntaxKind.SemicolonToken))
-                                }
+                        (SingletonList
+                            (AccessorDeclaration(SyntaxKind.GetAccessorDeclaration)
+                                .WithSemicolonToken(Token(SyntaxKind.SemicolonToken))
                             )
                         )
                     );

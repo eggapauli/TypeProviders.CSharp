@@ -439,7 +439,11 @@ class TestProvider
             action.Should().NotBeNull("Can't apply <null> refactoring");
             var operations = await action.GetOperationsAsync(CancellationToken.None);
             var solution = operations.OfType<ApplyChangesOperation>().Single().ChangedSolution;
-            return solution.GetDocument(document.Id);
+            var newDocument = solution.GetDocument(document.Id);
+            var syntaxRoot = await newDocument.GetSyntaxRootAsync();
+            var compilation = await newDocument.Project.GetCompilationAsync();
+            compilation.GetDiagnostics().Should().BeEmpty();
+            return newDocument;
         }
 
         static async Task<CodeAction> GetRefactoring(string code, CodeRefactoringProvider codeRefactoringProvider)
@@ -464,26 +468,36 @@ class TestProvider
             const string projectName = "TestProject";
 
             var CorlibReference = MetadataReference.CreateFromFile(typeof(object).Assembly.Location);
+            var SystemReference = MetadataReference.CreateFromFile(typeof(Uri).Assembly.Location);
             var SystemCoreReference = MetadataReference.CreateFromFile(typeof(Enumerable).Assembly.Location);
             var CSharpSymbolsReference = MetadataReference.CreateFromFile(typeof(CSharpCompilation).Assembly.Location);
             var CodeAnalysisReference = MetadataReference.CreateFromFile(typeof(Compilation).Assembly.Location);
+            var NetHttpReference = MetadataReference.CreateFromFile(typeof(System.Net.Http.HttpClient).Assembly.Location);
             var TypeProvidersAssembly = MetadataReference.CreateFromFile(typeof(JsonProviderAttribute).Assembly.Location);
+            var SystemRuntimeReference = MetadataReference.CreateFromFile(Assembly.Load("System.Runtime, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a").Location);
+            var JsonNetReference = MetadataReference.CreateFromFile(typeof(Newtonsoft.Json.JsonConvert).Assembly.Location);
 
             var projectId = ProjectId.CreateNewId(debugName: projectName);
+            var compilationOptions = new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary);
+
+            var newFileName = $"{fileNamePrefix}.{fileExt}";
+            var documentId = DocumentId.CreateNewId(projectId, debugName: newFileName);
 
             var solution = new AdhocWorkspace()
                 .CurrentSolution
                 .AddProject(projectId, projectName, projectName, LanguageNames.CSharp)
+                .WithProjectCompilationOptions(projectId, compilationOptions)
                 .AddMetadataReference(projectId, CorlibReference)
+                .AddMetadataReference(projectId, SystemReference)
                 .AddMetadataReference(projectId, SystemCoreReference)
                 .AddMetadataReference(projectId, CSharpSymbolsReference)
                 .AddMetadataReference(projectId, CodeAnalysisReference)
+                .AddMetadataReference(projectId, NetHttpReference)
                 .AddMetadataReference(projectId, TypeProvidersAssembly)
-                .AddMetadataReference(projectId, MetadataReference.CreateFromFile(Assembly.Load("System.Runtime, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a").Location));
+                .AddMetadataReference(projectId, SystemRuntimeReference)
+                .AddMetadataReference(projectId, JsonNetReference)
+                .AddDocument(documentId, newFileName, code);
 
-            var newFileName = $"{fileNamePrefix}.{fileExt}";
-            var documentId = DocumentId.CreateNewId(projectId, debugName: newFileName);
-            solution = solution.AddDocument(documentId, newFileName, SourceText.From(code));
             return solution.GetDocument(documentId);
         }
     }

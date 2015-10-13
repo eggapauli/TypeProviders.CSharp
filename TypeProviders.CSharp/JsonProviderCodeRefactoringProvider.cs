@@ -284,7 +284,7 @@ namespace TypeProviders.CSharp
                                 AttributeList
                                     (SingletonSeparatedList
                                         (Attribute
-                                            (IdentifierName("Newtonsoft.Json.JsonConstructor"))
+                                            (ParseName("Newtonsoft.Json.JsonConstructor"))
                                         )
                                     )
                             }
@@ -330,7 +330,7 @@ namespace TypeProviders.CSharp
                                                     .WithInitializer
                                                         (EqualsValueClause
                                                             (ObjectCreationExpression
-                                                                (IdentifierName("System.Net.Http.HttpRequestMessage"))
+                                                                (ParseTypeName("System.Net.Http.HttpRequestMessage"))
                                                                 .WithArgumentList
                                                                     (ArgumentList
                                                                         (SeparatedList
@@ -339,7 +339,7 @@ namespace TypeProviders.CSharp
                                                                                     Argument
                                                                                         (MemberAccessExpression
                                                                                             (SyntaxKind.SimpleMemberAccessExpression
-                                                                                            , IdentifierName("System.Net.Http.HttpMethod")
+                                                                                            , ParseTypeName("System.Net.Http.HttpMethod")
                                                                                             , IdentifierName("Get")
                                                                                             )
                                                                                         )
@@ -374,7 +374,7 @@ namespace TypeProviders.CSharp
                                                 (SingletonSeparatedList
                                                     (Argument
                                                         (ObjectCreationExpression
-                                                            (IdentifierName("System.Net.Http.Headers.MediaTypeWithQualityHeaderValue"))
+                                                            (ParseTypeName("System.Net.Http.Headers.MediaTypeWithQualityHeaderValue"))
                                                             .WithArgumentList
                                                                 (ArgumentList
                                                                     (SingletonSeparatedList
@@ -412,7 +412,7 @@ namespace TypeProviders.CSharp
                                                 (SingletonSeparatedList
                                                     (Argument
                                                         (ObjectCreationExpression
-                                                            (IdentifierName("System.Net.Http.Headers.ProductInfoHeaderValue"))
+                                                            (ParseTypeName("System.Net.Http.Headers.ProductInfoHeaderValue"))
                                                             .WithArgumentList
                                                                 (ArgumentList
                                                                     (SeparatedList
@@ -533,7 +533,7 @@ namespace TypeProviders.CSharp
             //    return Newtonsoft.Json.JsonConvert.DeserializeObject<JsonProvider>(data);
             //}
 
-            return MethodDeclaration(IdentifierName(typeName), "FromData")
+            return MethodDeclaration(ParseTypeName(typeName), "FromData")
                 .WithModifiers(TokenList(Token(SyntaxKind.PublicKeyword), Token(SyntaxKind.StaticKeyword)))
                 .WithParameterList
                     (ParameterList
@@ -549,7 +549,7 @@ namespace TypeProviders.CSharp
                             (InvocationExpression
                                 (MemberAccessExpression
                                     (SyntaxKind.SimpleMemberAccessExpression
-                                    , IdentifierName("Newtonsoft.Json.JsonConvert")
+                                    , ParseTypeName("Newtonsoft.Json.JsonConvert")
                                     , GenericName("DeserializeObject")
                                         .WithTypeArgumentList
                                             (TypeArgumentList
@@ -572,7 +572,7 @@ namespace TypeProviders.CSharp
             //    return FromData(data);
             //}
 
-            return MethodDeclaration(IdentifierName(typeName), "GetSample")
+            return MethodDeclaration(ParseTypeName(typeName), "GetSample")
                 .WithModifiers(TokenList(Token(SyntaxKind.PublicKeyword), Token(SyntaxKind.StaticKeyword)))
                 .WithBody
                     (Block

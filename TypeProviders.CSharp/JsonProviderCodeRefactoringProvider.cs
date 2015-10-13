@@ -46,10 +46,10 @@ namespace TypeProviders.CSharp
 
         static async Task<Document> UpdateTypeProviderAsync(Document document, ClassDeclarationSyntax typeDecl, string sampleData, CancellationToken ct)
         {
-            var syntaxRoot = await document.GetSyntaxRootAsync(ct);
+            var syntaxRoot = await document.GetSyntaxRootAsync(ct).ConfigureAwait(false);
             try
             {
-                var data = await GetData(sampleData, ct);
+                var data = await GetData(sampleData, ct).ConfigureAwait(false);
 
                 var entry = ParseData(typeDecl.Identifier.Text, data, "");
 
@@ -88,12 +88,12 @@ namespace TypeProviders.CSharp
                         var request = new HttpRequestMessage(HttpMethod.Get, sampleDataUri);
                         request.Headers.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json"));
                         request.Headers.UserAgent.Add(new System.Net.Http.Headers.ProductInfoHeaderValue("TypeProviders.CSharp", "0.0.1"));
-                        var response = await client.SendAsync(request);
+                        var response = await client.SendAsync(request).ConfigureAwait(false);
                         if (!response.IsSuccessStatusCode)
                         {
                             throw new NotifyUserException($"Getting sample data from \"{sampleDataUri}\" failed with status code {(int)response.StatusCode} ({response.StatusCode}).");
                         }
-                        var data = await response.Content.ReadAsStringAsync();
+                        var data = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
                         return ParseJsonSafe(data);
                     }
                 }
@@ -285,9 +285,9 @@ namespace TypeProviders.CSharp
             //        var request = new System.Net.Http.HttpRequestMessage(System.Net.HttpMethod.Get, uri);
             //        request.Headers.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json"));
             //        request.Headers.UserAgent.Add(new System.Net.Http.Headers.ProductInfoHeaderValue("TypeProviders.CSharp", "0.0.1"));
-            //        var response = await client.SendAsync(request);
+            //        var response = await client.SendAsync(request).ConfigureAwait(false);
             //        response.EnsureSuccessStatusCode();
-            //        var data = await response.Content.ReadAsStringAsync();
+            //        var data = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
             //        return FromData(data);
             //    }
             //}
@@ -430,14 +430,32 @@ namespace TypeProviders.CSharp
                                                                 (InvocationExpression
                                                                     (MemberAccessExpression
                                                                         (SyntaxKind.SimpleMemberAccessExpression
-                                                                        , IdentifierName("client")
-                                                                        , IdentifierName("SendAsync")
+                                                                        , InvocationExpression
+                                                                            (MemberAccessExpression
+                                                                                (SyntaxKind.SimpleMemberAccessExpression
+                                                                                , IdentifierName("client")
+                                                                                , IdentifierName("SendAsync")
+                                                                                )
+                                                                            )
+                                                                            .WithArgumentList
+                                                                                (ArgumentList
+                                                                                    (SingletonSeparatedList
+                                                                                        (Argument(IdentifierName("request")))
+                                                                                    )
+                                                                                )
+                                                                        , IdentifierName("ConfigureAwait")
                                                                         )
                                                                     )
                                                                     .WithArgumentList
                                                                         (ArgumentList
                                                                             (SingletonSeparatedList
-                                                                                (Argument(IdentifierName("request")))
+                                                                                (Argument
+                                                                                    (LiteralExpression
+                                                                                        (SyntaxKind.FalseLiteralExpression
+                                                                                        , Token(SyntaxKind.FalseKeyword)
+                                                                                        )
+                                                                                    )
+                                                                                )
                                                                             )
                                                                         )
                                                                 )
@@ -466,14 +484,32 @@ namespace TypeProviders.CSharp
                                                                 (InvocationExpression
                                                                     (MemberAccessExpression
                                                                         (SyntaxKind.SimpleMemberAccessExpression
-                                                                        , MemberAccessExpression
-                                                                            (SyntaxKind.SimpleMemberAccessExpression
-                                                                            , IdentifierName("response")
-                                                                            , IdentifierName("Content")
+                                                                        , InvocationExpression
+                                                                            (MemberAccessExpression
+                                                                                (SyntaxKind.SimpleMemberAccessExpression
+                                                                                , MemberAccessExpression
+                                                                                    (SyntaxKind.SimpleMemberAccessExpression
+                                                                                    , IdentifierName("response")
+                                                                                    , IdentifierName("Content")
+                                                                                    )
+                                                                                , IdentifierName("ReadAsStringAsync")
+                                                                                )
                                                                             )
-                                                                        , IdentifierName("ReadAsStringAsync")
+                                                                        , IdentifierName("ConfigureAwait")
                                                                         )
                                                                     )
+                                                                    .WithArgumentList
+                                                                        (ArgumentList
+                                                                            (SingletonSeparatedList
+                                                                                (Argument
+                                                                                    (LiteralExpression
+                                                                                        (SyntaxKind.FalseLiteralExpression
+                                                                                        , Token(SyntaxKind.FalseKeyword)
+                                                                                        )
+                                                                                    )
+                                                                                )
+                                                                            )
+                                                                        )
                                                                 )
                                                             )
                                                         )

@@ -80,27 +80,29 @@ namespace TypeProviders.CSharp
         static async Task<string> GetData(string sampleData, CancellationToken ct)
         {
             Uri sampleDataUri;
-            if (Uri.TryCreate(sampleData, UriKind.Absolute, out sampleDataUri))
+            if (!Uri.TryCreate(sampleData, UriKind.Absolute, out sampleDataUri))
             {
-                if (sampleDataUri.Scheme == "http" || sampleDataUri.Scheme == "https")
-                {
-                    using (var client = new HttpClient())
-                    {
-                        var request = new HttpRequestMessage(HttpMethod.Get, sampleDataUri);
-                        request.Headers.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json"));
-                        request.Headers.UserAgent.Add(new System.Net.Http.Headers.ProductInfoHeaderValue("TypeProviders.CSharp", "0.0.1"));
-                        var response = await client.SendAsync(request).ConfigureAwait(false);
-                        if (!response.IsSuccessStatusCode)
-                        {
-                            throw new NotifyUserException($"Getting sample data from \"{sampleDataUri}\" failed with status code {(int)response.StatusCode} ({response.StatusCode}).");
-                        }
-                        var data = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
-                        return data;
-                    }
-                }
+                return sampleData;
+            }
+
+            if (sampleDataUri.Scheme != "http" && sampleDataUri.Scheme != "https")
+            {
                 throw new NotifyUserException($"Getting sample data from \"{sampleDataUri}\" is not supported. Only \"http\" and \"https\" schemes are allowed.");
             }
-            return sampleData;
+
+            using (var client = new HttpClient())
+            {
+                var request = new HttpRequestMessage(HttpMethod.Get, sampleDataUri);
+                request.Headers.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json"));
+                request.Headers.UserAgent.Add(new System.Net.Http.Headers.ProductInfoHeaderValue("TypeProviders.CSharp", "0.0.1"));
+                var response = await client.SendAsync(request).ConfigureAwait(false);
+                if (!response.IsSuccessStatusCode)
+                {
+                    throw new NotifyUserException($"Getting sample data from \"{sampleDataUri}\" failed with status code {(int)response.StatusCode} ({response.StatusCode}).");
+                }
+                var data = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+                return data;
+            }
         }
 
         static JToken ParseJsonSafe(string data)
@@ -160,7 +162,7 @@ namespace TypeProviders.CSharp
                     var type = ParseTypeName(string.Format(format, childEntry.EntryType.ToString()));
                     return new HierarchicalDataEntry
                         (type
-                        , !string.IsNullOrEmpty(propertyName) ? propertyName : "Items"
+                        , propertyName
                         , childEntry.EntryType
                         , childEntry.Children
                         );

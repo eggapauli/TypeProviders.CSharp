@@ -246,7 +246,7 @@ namespace TypeProviders.CSharp
             var parameters = dataEntry.Children
                 .Select(c =>
                     Parameter
-                        (Identifier(c.VariableName))
+                        (Identifier(c.PropertyName.ToVariableIdentifier()))
                         .WithType(c.PropertyType)
                 );
             var assignmentStatements = dataEntry.Children
@@ -255,7 +255,7 @@ namespace TypeProviders.CSharp
                         (AssignmentExpression
                             (SyntaxKind.SimpleAssignmentExpression
                             , IdentifierName(c.PropertyName)
-                            , IdentifierName(c.VariableName)
+                            , IdentifierName(c.PropertyName.ToVariableIdentifier())
                             )
                         )
                 );

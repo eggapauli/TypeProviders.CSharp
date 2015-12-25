@@ -119,70 +119,78 @@ namespace TypeProviders.CSharp
 
         static HierarchicalDataEntry ParseData(string typePrefix, JToken data, string propertyName)
         {
-            var jObj = data as JObject;
-            if (jObj != null)
+            try
             {
-                var subTypeName = typePrefix + propertyName.ToPublicIdentifier();
-                var propertyType = ParseTypeName(subTypeName);
-                var subProperties = jObj.Properties()
-                    .Select(p => ParseData(typePrefix, p.Value, p.Name.ToPublicIdentifier()));
+                return new Match<HierarchicalDataEntry>()
+                    .With((JObject x) => ParseObject(typePrefix, propertyName, x))
+                    .With((JArray x) => ParseArray(typePrefix, propertyName, x))
+                    .With((JValue x) => ParseValue(typePrefix, propertyName, x))
+                    .Run(data);
+            }
+            catch (MatchException e)
+            {
+                throw new NotSupportedException("Unsupported JToken type: " + data.GetType().Name, e);
+            }
+        }
+
+        static HierarchicalDataEntry ParseObject(string typePrefix, string propertyName, JObject data)
+        {
+            var subTypeName = typePrefix + propertyName.ToPublicIdentifier();
+            var propertyType = ParseTypeName(subTypeName);
+            var subProperties = data.Properties()
+                .Select(p => ParseData(typePrefix, p.Value, p.Name.ToPublicIdentifier()));
+            return new HierarchicalDataEntry
+                (propertyType
+                , propertyName
+                , propertyType
+                , subProperties
+                );
+        }
+
+        static HierarchicalDataEntry ParseArray(string typePrefix, string propertyName, JArray data)
+        {
+            var format = "{0}";
+            JToken child = data;
+            while (child.Type == JTokenType.Array)
+            {
+                child = child[0];
+                format = $"System.Collections.Generic.IReadOnlyList<{ format }>";
+            }
+
+            if (string.IsNullOrEmpty(propertyName))
+            {
+                var childEntry = ParseData(typePrefix, child, propertyName);
+                var type = ParseTypeName(string.Format(format, childEntry.EntryType.ToString()));
                 return new HierarchicalDataEntry
-                    (propertyType
-                    , propertyName
-                    , propertyType
-                    , subProperties
+                    (type
+                    , childEntry.PropertyName
+                    , childEntry.EntryType
+                    , childEntry.Children
                     );
             }
-
-            var jArr = data as JArray;
-            if (jArr != null)
+            else
             {
-                var format = "{0}";
-                JToken child = jArr;
-                while (child.Type == JTokenType.Array)
-                {
-                    child = child[0];
-                    format = $"System.Collections.Generic.IReadOnlyList<{ format }>";
-                }
-
-                if (string.IsNullOrEmpty(propertyName))
-                {
-                    var childEntry = ParseData(typePrefix, child, propertyName);
-                    var type = ParseTypeName(string.Format(format, childEntry.EntryType.ToString()));
-                    return new HierarchicalDataEntry
-                        (type
-                        , childEntry.PropertyName
-                        , childEntry.EntryType
-                        , childEntry.Children
-                        );
-                }
-                else
-                {
-                    var childEntry = ParseData(typePrefix, child, propertyName + "Item");
-                    var type = ParseTypeName(string.Format(format, childEntry.EntryType.ToString()));
-                    return new HierarchicalDataEntry
-                        (type
-                        , propertyName
-                        , childEntry.EntryType
-                        , childEntry.Children
-                        );
-                }
-            }
-
-            var jValue = data as JValue;
-            if (jValue != null)
-            {
-                var type = GetTypeFromToken(jValue);
+                var childEntry = ParseData(typePrefix, child, propertyName + "Item");
+                var type = ParseTypeName(string.Format(format, childEntry.EntryType.ToString()));
                 return new HierarchicalDataEntry
                     (type
                     , propertyName
-                    , type
-                    , Enumerable.Empty<HierarchicalDataEntry>());
+                    , childEntry.EntryType
+                    , childEntry.Children
+                    );
             }
-
-            throw new NotSupportedException("Unsupported JToken type: " + data.GetType().Name);
         }
-        
+
+        static HierarchicalDataEntry ParseValue(string typePrefix, string propertyName, JValue data)
+        {
+            var type = GetTypeFromToken(data);
+            return new HierarchicalDataEntry
+                (type
+                , propertyName
+                , type
+                , Enumerable.Empty<HierarchicalDataEntry>());
+        }
+
         static IEnumerable<MemberDeclarationSyntax> GetMembers(HierarchicalDataEntry dataEntry)
         {
             foreach (var members in GetPropertiesFromData(dataEntry))

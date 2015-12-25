@@ -36,6 +36,7 @@
     <Compile Include="HierarchicalDataStructure.cs" />
     <Compile Include="JsonProviderCodeRefactoringProvider.cs" />
     <Compile Include="JsonProviderHelper.cs" />
+    <Compile Include="Match.cs" />
     <Compile Include="NotifyUserException.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="StringHelper.cs" />

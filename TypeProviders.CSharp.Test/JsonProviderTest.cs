@@ -21,7 +21,7 @@ namespace TypeProviders.CSharp.Test
         public void ShouldNotHaveRefactoringWhenAttributeNotSet()
         {
             var code = "class TestProvider { }";
-            var provider = CreateCodeRefactoringProviderForDataStructure();
+            var provider = CreateCodeRefactoringProvider();
             var action = GetRefactoring(code, provider);
             action.Should().BeNull();
         }
@@ -35,7 +35,7 @@ class TestProvider
 {
 }
 ";
-            var provider = CreateCodeRefactoringProviderForDataStructure();
+            var provider = CreateCodeRefactoringProvider();
             var action = GetRefactoring(code, provider);
             action.Should().BeNull();
         }
@@ -49,7 +49,7 @@ class TestProvider
 {
 }
 ";
-            var provider = CreateCodeRefactoringProviderForDataStructure();
+            var provider = CreateCodeRefactoringProvider();
             var action = GetRefactoring(code, provider);
             action.Should().BeNull();
         }
@@ -63,7 +63,7 @@ class TestProvider
 {
 }
 ";
-            var provider = CreateCodeRefactoringProviderForDataStructure();
+            var provider = CreateCodeRefactoringProvider();
             var action = GetRefactoring(code, provider);
             action.Should().NotBeNull();
         }
@@ -102,7 +102,7 @@ class TestProvider
 {CreationMethods("TestProvider", 1, json)}
 }}
 ";
-            var provider = CreateCodeRefactoringProviderForDataStructure();
+            var provider = CreateCodeRefactoringProvider();
             var document = GetAndApplyRefactoring(code, provider);
             var text = document.GetTextAsync().Result;
             text.ToString().Should().Be(expectedCode);
@@ -145,7 +145,7 @@ class TestProvider
 {CreationMethods("TestProvider", 1, json)}
 }}
 ";
-            var provider = CreateCodeRefactoringProviderForDataStructure();
+            var provider = CreateCodeRefactoringProvider();
             var document = GetAndApplyRefactoring(code, provider);
             var text = document.GetTextAsync().Result;
             text.ToString().Should().Be(expectedCode);
@@ -177,7 +177,7 @@ class TestProvider
 {CreationMethods("TestProvider", 1, json)}
 }}
 ";
-            var provider = CreateCodeRefactoringProviderForDataStructure();
+            var provider = CreateCodeRefactoringProvider();
             var document = GetAndApplyRefactoring(code, provider);
             var text = document.GetTextAsync().Result;
             text.ToString().Should().Be(expectedCode);
@@ -220,7 +220,7 @@ class TestProvider
 {CreationMethods("TestProvider", 1, json)}
 }}
 ";
-            var provider = CreateCodeRefactoringProviderForDataStructure();
+            var provider = CreateCodeRefactoringProvider();
             var document = GetAndApplyRefactoring(code, provider);
             var text = document.GetTextAsync().Result;
             text.ToString().Should().Be(expectedCode);
@@ -252,7 +252,7 @@ class TestProvider
 {CreationMethods("TestProvider", 1, json)}
 }}
 ";
-            var provider = CreateCodeRefactoringProviderForDataStructure();
+            var provider = CreateCodeRefactoringProvider();
             var document = GetAndApplyRefactoring(code, provider);
             var text = document.GetTextAsync().Result;
             text.ToString().Should().Be(expectedCode);
@@ -295,7 +295,7 @@ class TestProvider
 {CreationMethods("TestProvider", 1, json)}
 }}
 ";
-            var provider = CreateCodeRefactoringProviderForDataStructure();
+            var provider = CreateCodeRefactoringProvider();
             var document = GetAndApplyRefactoring(code, provider);
             var text = document.GetTextAsync().Result;
             text.ToString().Should().Be(expectedCode);
@@ -319,7 +319,7 @@ class TestProvider
 {CreationMethods("System.Collections.Generic.IReadOnlyList<int>", 1, json)}
 }}
 ";
-            var provider = CreateCodeRefactoringProviderForDataStructure();
+            var provider = CreateCodeRefactoringProvider();
             var document = GetAndApplyRefactoring(code, provider);
             var text = document.GetTextAsync().Result;
             text.ToString().Should().Be(expectedCode);
@@ -351,7 +351,7 @@ class TestProvider
 {CreationMethods("System.Collections.Generic.IReadOnlyList<TestProvider>", 1, json)}
 }}
 ";
-            var provider = CreateCodeRefactoringProviderForDataStructure();
+            var provider = CreateCodeRefactoringProvider();
             var document = GetAndApplyRefactoring(code, provider);
             var text = document.GetTextAsync().Result;
             text.ToString().Should().Be(expectedCode);
@@ -378,13 +378,13 @@ class TestProvider
     /* {errorMessage} */
 }}
 ";
-            var provider = CreateCodeRefactoringProviderForDataStructure();
+            var provider = CreateCodeRefactoringProvider();
             var document = GetAndApplyRefactoring(code, provider);
             var text = document.GetTextAsync().Result;
             text.ToString().Should().Be(expectedCode);
         }
 
-        static JsonProviderCodeRefactoringProvider CreateCodeRefactoringProviderForDataStructure()
+        static CodeRefactoringProvider CreateCodeRefactoringProvider()
         {
             return new JsonProviderCodeRefactoringProvider();
         }

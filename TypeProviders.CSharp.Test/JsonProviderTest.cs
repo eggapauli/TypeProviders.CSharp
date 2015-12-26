@@ -109,6 +109,40 @@ class TestProvider
         }
 
         [Fact]
+        public void ShouldWorkWithMultipleObjectProperties()
+        {
+            var json = @"{ \""A\"": 5, \""B\"": \""test\"" }";
+            var attribute = $@"[TypeProviders.CSharp.Providers.JsonProvider(""{json}"")]";
+
+            var code = attribute + @"
+class TestProvider
+{
+}
+";
+
+            var expectedCode = attribute + $@"
+class TestProvider
+{{
+    public int A {{ get; }}
+    public string B {{ get; }}
+
+    [Newtonsoft.Json.JsonConstructor]
+    private TestProvider(int a, string b)
+    {{
+        A = a;
+        B = b;
+    }}
+
+{CreationMethods("TestProvider", 1, json)}
+}}
+";
+            var provider = CreateCodeRefactoringProvider();
+            var document = GetAndApplyRefactoring(code, provider);
+            var text = document.GetTextAsync().Result;
+            text.ToString().Should().Be(expectedCode);
+        }
+
+        [Fact]
         public void ShouldRefactorAccordingToSampleDataWithNestedObject()
         {
             var json = @"{ \""Obj\"": { \""Value\"": 5 } }";

@@ -21,7 +21,7 @@ namespace TypeProviders.CSharp
     public class JsonProviderCodeRefactoringProvider : CodeRefactoringProvider
     {
         static readonly string AttributeFullName = typeof(Providers.JsonProviderAttribute).FullName;
-        
+
         public sealed override async Task ComputeRefactoringsAsync(CodeRefactoringContext context)
         {
             var root = await context
@@ -62,7 +62,7 @@ namespace TypeProviders.CSharp
                     .WithAdditionalAnnotations(Formatter.Annotation);
                 return document.WithSyntaxRoot(syntaxRoot.ReplaceNode(typeDecl, newTypeDecl));
             }
-            catch(NotifyUserException e)
+            catch (NotifyUserException e)
             {
                 var newTypeDecl = typeDecl
                     .WithMembers(List<MemberDeclarationSyntax>())

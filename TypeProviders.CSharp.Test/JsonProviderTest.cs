@@ -368,7 +368,7 @@ class TestProvider
             var code = attribute + @"
 class TestProvider
 {
-    pulbic int A { get; }
+    public int A { get; }
 }
 ";
 

@@ -1,0 +1,5 @@
+﻿Microsoft.CodeAnalysis.CSharp.Workspaces
+Newtonsoft.Json
+Unquote
+xunit
+xunit.runner.visualstudio

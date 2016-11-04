@@ -76,6 +76,7 @@ let createDocument (code: string) =
     let netHttpReference = MetadataReference.CreateFromFile(Assembly.Load("System.Net.Http, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a").Location)
     let typeProvidersAssembly = metaDataReferenceFromType<TypeProviders.CSharp.Providers.JsonProviderAttribute>
     let systemRuntimeReference = MetadataReference.CreateFromFile(Assembly.Load("System.Runtime, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a").Location)
+    let jsonNetReference = metaDataReferenceFromType<Newtonsoft.Json.JsonConvert>
 
     let projectId = ProjectId.CreateNewId(debugName = projectName)
     let compilationOptions = CSharpCompilationOptions OutputKind.DynamicallyLinkedLibrary
@@ -97,6 +98,7 @@ let createDocument (code: string) =
             .AddMetadataReference(projectId, netHttpReference)
             .AddMetadataReference(projectId, typeProvidersAssembly)
             .AddMetadataReference(projectId, systemRuntimeReference)
+            .AddMetadataReference(projectId, jsonNetReference)
             .AddDocument(documentId, newFileName, code)
 
     solution.GetDocument documentId

@@ -1,6 +1,5 @@
 FSharp.Core
 Microsoft.CodeAnalysis.CSharp.Workspaces
-Zlib.Portable
 
 File: ProvidedTypes.fsi FSharp.TypeProviders.StarterPack
 File: ProvidedTypes.fs FSharp.TypeProviders.StarterPack

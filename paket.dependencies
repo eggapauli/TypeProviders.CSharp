@@ -1,6 +1,7 @@
 source https://api.nuget.org/v3/index.json
 
 nuget FSharp.Core
+nuget Newtonsoft.Json
 nuget Microsoft.CodeAnalysis.CSharp.Workspaces
 nuget Unquote
 nuget xunit

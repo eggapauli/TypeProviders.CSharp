@@ -240,3 +240,24 @@ let ``Should create combined type for all array elements``() =
         ]
     }
     actual =! expected
+
+[<Fact>]
+let ``Should use object when type is unknown``() =
+    let actual =
+        JsonProviderArgs.create """[ { "a": null } ]"""
+        |> JsonProviderBridge.parseDataType
+
+    let expected = {
+        ReturnTypeFromParsingData = Common "Root" |> Collection
+        Members =
+        [
+            SubType
+                (
+                    "Root",
+                    [
+                        Property ("A", Predefined TObject)
+                    ]
+                )
+        ]
+    }
+    actual =! expected

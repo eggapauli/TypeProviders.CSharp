@@ -66,6 +66,8 @@ let rec getTypeName (t: Type) =
             then Optional elementTypeName
             else elementTypeName
         elif t.IsNested then Common t.Name // TODO works only for our types, not for existing ones
+        elif t.FullName = typeof<FSharp.Data.Runtime.BaseTypes.IJsonDocument>.FullName
+        then Predefined TObject
         else Common t.FullName
 
 let toSyntaxKind = function

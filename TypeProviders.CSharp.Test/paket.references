@@ -1,5 +1,5 @@
-﻿Microsoft.CodeAnalysis.CSharp.Workspaces
-Newtonsoft.Json
+﻿FSharp.Core
+Microsoft.CodeAnalysis.CSharp.Workspaces
 Unquote
 xunit
 xunit.runner.visualstudio

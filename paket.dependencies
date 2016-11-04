@@ -1,11 +1,8 @@
 source https://api.nuget.org/v3/index.json
 
 nuget FSharp.Core
-nuget FSharp.Data
 nuget Microsoft.CodeAnalysis.CSharp.Workspaces
-nuget Newtonsoft.Json
 nuget Unquote
-nuget System.Collections.Immutable
 nuget xunit
 nuget xunit.runner.visualstudio version_in_path:true
 
@@ -36,4 +33,3 @@ github fsprojects/FSharp.TypeProviders.StarterPack src/ProvidedTypes.fs
 github fsprojects/FSharp.TypeProviders.StarterPack src/AssemblyReader.fs
 github fsprojects/FSharp.TypeProviders.StarterPack src/AssemblyReaderReflection.fs
 github fsprojects/FSharp.TypeProviders.StarterPack src/ProvidedTypesContext.fs
-#github fsprojects/FSharp.TypeProviders.StarterPack src/ProvidedTypesTesting.fs

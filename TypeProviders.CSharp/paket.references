@@ -1,7 +1,5 @@
 FSharp.Core
 Microsoft.CodeAnalysis.CSharp.Workspaces
-Newtonsoft.Json
-System.Collections.Immutable
 Zlib.Portable
 
 File: ProvidedTypes.fsi FSharp.TypeProviders.StarterPack

@@ -37,6 +37,12 @@ let rec getTypeName (t: Type) =
         let (=!) (t1: Type) (t2: Type) =
             t1.Assembly.FullName = t2.Assembly.FullName
             && t1.FullName = t2.FullName
+
+        let isOptional (ty: Type) =
+            ty.IsGenericType &&
+                (ty.GetGenericTypeDefinition() =! typedefof<option<_>>
+                || ty.GetGenericTypeDefinition() =! typedefof<Nullable<_>>)
+
         if t =! typeof<bool> then Predefined TBool
         elif t =! typeof<byte> then Predefined TByte
         elif t =! typeof<sbyte> then Predefined TSByte
@@ -52,7 +58,14 @@ let rec getTypeName (t: Type) =
         elif t =! typeof<int16> then Predefined TShort
         elif t =! typeof<uint16> then Predefined TUShort
         elif t =! typeof<string> then Predefined TString
-        elif t.IsNested then Common t.Name
+        elif isOptional t
+        then
+            let elementType = t.GetGenericArguments().[0]
+            let elementTypeName = getTypeName elementType
+            if elementType.IsValueType
+            then Optional elementTypeName
+            else elementTypeName
+        elif t.IsNested then Common t.Name // TODO works only for our types, not for existing ones
         else Common t.FullName
 
 let toSyntaxKind = function
@@ -96,4 +109,8 @@ let rec getTypeSyntax = function
         |> toSyntaxKind
         |> SyntaxFactory.Token
         |> SyntaxFactory.PredefinedType
+        :> TypeSyntax
+    | Optional t ->
+        getTypeSyntax t
+        |> SyntaxFactory.NullableType
         :> TypeSyntax

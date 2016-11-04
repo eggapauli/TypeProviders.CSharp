@@ -218,3 +218,25 @@ let ``Should refactor according to object array``() =
         ]
     }
     actual =! expected
+
+[<Fact>]
+let ``Should create combined type for all array elements``() =
+    let actual =
+        JsonProviderArgs.create """[ { "a": 5 }, { "b": "text" } ]"""
+        |> JsonProviderBridge.parseDataType
+
+    let expected = {
+        ReturnTypeFromParsingData = Common "Root" |> Collection
+        Members =
+        [
+            SubType
+                (
+                    "Root",
+                    [
+                        Property ("A", Predefined TInt |> Optional)
+                        Property ("B", Predefined TString)
+                    ]
+                )
+        ]
+    }
+    actual =! expected

@@ -26,6 +26,7 @@ type TypeName =
     | Common of string
     | Collection of TypeName
     | Predefined of PredefinedCSharpType
+    | Optional of TypeName
 
 type DataTypeMember =
     | SubType of string * DataTypeMember list

@@ -156,7 +156,8 @@ module JsonProviderBridge =
         let rec updatePropertyType = function
             | Common name -> getNewName name |> Common
             | Collection t -> updatePropertyType t |> Collection
-            | x -> x
+            | Optional t -> updatePropertyType t |> Optional
+            | Predefined t -> Predefined t
 
         let rec updateDataTypeMember = function
             | SubType (name, members) ->

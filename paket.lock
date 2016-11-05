@@ -1,6 +1,8 @@
 NUGET
   remote: http://api.nuget.org/v3/index.json
     FSharp.Core (4.0.0.1)
+    FSharp.Data (2.3.2)
+      Zlib.Portable (>= 1.11) - framework: >= netstandard11, portable-net45+sl5+win8, portable-net45+win8, portable-net45+win8+wp8+wpa81
     Microsoft.CodeAnalysis.Analyzers (1.1)
     Microsoft.CodeAnalysis.Common (1.2.2)
       Microsoft.CodeAnalysis.Analyzers (>= 1.1)
@@ -326,33 +328,4 @@ NUGET
       xunit.abstractions (>= 2.0) - framework: dnxcore50
       xunit.extensibility.core (2.1) - framework: >= net45, dnx451, dnxcore50, monoandroid, monotouch, xamarinios, winv4.5, wpv8.0, wpav8.1
     xunit.runner.visualstudio (2.1.0) - version_in_path: true
-GITHUB
-  remote: fsharp/FSharp.Data
-    src/CommonProviderImplementation/AssemblyResolver.fs (0b54be62da870727f2d7bd5a27ec20d1a6e35f10)
-    src/CommonProviderImplementation/Helpers.fs (0b54be62da870727f2d7bd5a27ec20d1a6e35f10)
-    src/CommonProviderImplementation/QuotationBuilder.fs (0b54be62da870727f2d7bd5a27ec20d1a6e35f10)
-    src/CommonRuntime/Caching.fs (0b54be62da870727f2d7bd5a27ec20d1a6e35f10)
-    src/CommonRuntime/IO.fs (0b54be62da870727f2d7bd5a27ec20d1a6e35f10)
-    src/CommonRuntime/NameUtils.fs (0b54be62da870727f2d7bd5a27ec20d1a6e35f10)
-    src/CommonRuntime/Pluralizer.fs (0b54be62da870727f2d7bd5a27ec20d1a6e35f10)
-    src/CommonRuntime/StructuralInference.fs (0b54be62da870727f2d7bd5a27ec20d1a6e35f10)
-    src/CommonRuntime/StructuralTypes.fs (0b54be62da870727f2d7bd5a27ec20d1a6e35f10)
-    src/CommonRuntime/TextConversions.fs (0b54be62da870727f2d7bd5a27ec20d1a6e35f10)
-    src/CommonRuntime/TextRuntime.fs (0b54be62da870727f2d7bd5a27ec20d1a6e35f10)
-    src/DefineConstants.targets (0b54be62da870727f2d7bd5a27ec20d1a6e35f10)
-    src/Json/JsonConversions.fs (0b54be62da870727f2d7bd5a27ec20d1a6e35f10)
-    src/Json/JsonConversionsGenerator.fs (0b54be62da870727f2d7bd5a27ec20d1a6e35f10)
-    src/Json/JsonExtensions.fs (0b54be62da870727f2d7bd5a27ec20d1a6e35f10)
-    src/Json/JsonGenerator.fs (0b54be62da870727f2d7bd5a27ec20d1a6e35f10)
-    src/Json/JsonInference.fs (0b54be62da870727f2d7bd5a27ec20d1a6e35f10)
-    src/Json/JsonProvider.fs (0b54be62da870727f2d7bd5a27ec20d1a6e35f10)
-    src/Json/JsonRuntime.fs (0b54be62da870727f2d7bd5a27ec20d1a6e35f10)
-    src/Json/JsonValue.fs (0b54be62da870727f2d7bd5a27ec20d1a6e35f10)
-    src/Net/Http.fs (0b54be62da870727f2d7bd5a27ec20d1a6e35f10)
-    src/Net/UriUtils.fs (0b54be62da870727f2d7bd5a27ec20d1a6e35f10)
-  remote: fsprojects/FSharp.TypeProviders.StarterPack
-    src/AssemblyReader.fs (c50ace31d335b7bcb83b102d2cfd0ce2007ed681)
-    src/AssemblyReaderReflection.fs (c50ace31d335b7bcb83b102d2cfd0ce2007ed681)
-    src/ProvidedTypes.fs (c50ace31d335b7bcb83b102d2cfd0ce2007ed681)
-    src/ProvidedTypes.fsi (c50ace31d335b7bcb83b102d2cfd0ce2007ed681)
-    src/ProvidedTypesContext.fs (c50ace31d335b7bcb83b102d2cfd0ce2007ed681)
+    Zlib.Portable (1.11) - framework: >= netstandard11, portable-net45+sl5+win8, portable-net45+win8, portable-net45+win8+wp8+wpa81

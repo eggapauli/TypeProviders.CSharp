@@ -59,110 +59,6 @@
   <ItemGroup>
     <None Include="paket.references" />
     <Compile Include="AssemblyInfo.fs" />
-    <Compile Include="..\paket-files\fsprojects\FSharp.TypeProviders.StarterPack\src\AssemblyReader.fs">
-      <Paket>True</Paket>
-      <Link>FSharp.TypeProviders.StarterPack/AssemblyReader.fs</Link>
-    </Compile>
-    <Compile Include="..\paket-files\fsprojects\FSharp.TypeProviders.StarterPack\src\AssemblyReaderReflection.fs">
-      <Paket>True</Paket>
-      <Link>FSharp.TypeProviders.StarterPack/AssemblyReaderReflection.fs</Link>
-    </Compile>
-    <Compile Include="..\paket-files\fsprojects\FSharp.TypeProviders.StarterPack\src\ProvidedTypes.fsi">
-      <Paket>True</Paket>
-      <Link>FSharp.TypeProviders.StarterPack/ProvidedTypes.fsi</Link>
-    </Compile>
-    <Compile Include="..\paket-files\fsprojects\FSharp.TypeProviders.StarterPack\src\ProvidedTypes.fs">
-      <Paket>True</Paket>
-      <Link>FSharp.TypeProviders.StarterPack/ProvidedTypes.fs</Link>
-    </Compile>
-    <Compile Include="..\paket-files\fsprojects\FSharp.TypeProviders.StarterPack\src\ProvidedTypesContext.fs">
-      <Paket>True</Paket>
-      <Link>FSharp.TypeProviders.StarterPack/ProvidedTypesContext.fs</Link>
-    </Compile>
-    <Compile Include="..\paket-files\fsharp\FSharp.Data\src\Net\UriUtils.fs">
-      <Paket>True</Paket>
-      <Link>FSharp.Data/UriUtils.fs</Link>
-    </Compile>
-    <Compile Include="..\paket-files\fsharp\FSharp.Data\src\Net\Http.fs">
-      <Paket>True</Paket>
-      <Link>FSharp.Data/Http.fs</Link>
-    </Compile>
-    <Compile Include="..\paket-files\fsharp\FSharp.Data\src\CommonRuntime\Caching.fs">
-      <Paket>True</Paket>
-      <Link>FSharp.Data/Caching.fs</Link>
-    </Compile>
-    <Compile Include="..\paket-files\fsharp\FSharp.Data\src\CommonRuntime\IO.fs">
-      <Paket>True</Paket>
-      <Link>FSharp.Data/IO.fs</Link>
-    </Compile>
-    <Compile Include="..\paket-files\fsharp\FSharp.Data\src\CommonRuntime\TextConversions.fs">
-      <Paket>True</Paket>
-      <Link>FSharp.Data/TextConversions.fs</Link>
-    </Compile>
-    <Compile Include="..\paket-files\fsharp\FSharp.Data\src\CommonRuntime\TextRuntime.fs">
-      <Paket>True</Paket>
-      <Link>FSharp.Data/TextRuntime.fs</Link>
-    </Compile>
-    <Compile Include="..\paket-files\fsharp\FSharp.Data\src\CommonRuntime\Pluralizer.fs">
-      <Paket>True</Paket>
-      <Link>FSharp.Data/Pluralizer.fs</Link>
-    </Compile>
-    <Compile Include="..\paket-files\fsharp\FSharp.Data\src\CommonRuntime\NameUtils.fs">
-      <Paket>True</Paket>
-      <Link>FSharp.Data/NameUtils.fs</Link>
-    </Compile>
-    <Compile Include="..\paket-files\fsharp\FSharp.Data\src\CommonRuntime\StructuralTypes.fs">
-      <Paket>True</Paket>
-      <Link>FSharp.Data/StructuralTypes.fs</Link>
-    </Compile>
-    <Compile Include="..\paket-files\fsharp\FSharp.Data\src\CommonRuntime\StructuralInference.fs">
-      <Paket>True</Paket>
-      <Link>FSharp.Data/StructuralInference.fs</Link>
-    </Compile>
-    <Compile Include="..\paket-files\fsharp\FSharp.Data\src\CommonProviderImplementation\AssemblyResolver.fs">
-      <Paket>True</Paket>
-      <Link>FSharp.Data/AssemblyResolver.fs</Link>
-    </Compile>
-    <Compile Include="..\paket-files\fsharp\FSharp.Data\src\CommonProviderImplementation\QuotationBuilder.fs">
-      <Paket>True</Paket>
-      <Link>FSharp.Data/QuotationBuilder.fs</Link>
-    </Compile>
-    <Compile Include="..\paket-files\fsharp\FSharp.Data\src\CommonProviderImplementation\Helpers.fs">
-      <Paket>True</Paket>
-      <Link>FSharp.Data/Helpers.fs</Link>
-    </Compile>
-    <Compile Include="..\paket-files\fsharp\FSharp.Data\src\Json\JsonValue.fs">
-      <Paket>True</Paket>
-      <Link>FSharp.Data/JsonValue.fs</Link>
-    </Compile>
-    <Compile Include="..\paket-files\fsharp\FSharp.Data\src\Json\JsonConversions.fs">
-      <Paket>True</Paket>
-      <Link>FSharp.Data/JsonConversions.fs</Link>
-    </Compile>
-    <Compile Include="..\paket-files\fsharp\FSharp.Data\src\Json\JsonExtensions.fs">
-      <Paket>True</Paket>
-      <Link>FSharp.Data/JsonExtensions.fs</Link>
-    </Compile>
-    <Compile Include="..\paket-files\fsharp\FSharp.Data\src\Json\JsonRuntime.fs">
-      <Paket>True</Paket>
-      <Link>FSharp.Data/JsonRuntime.fs</Link>
-    </Compile>
-    <Compile Include="..\paket-files\fsharp\FSharp.Data\src\Json\JsonInference.fs">
-      <Paket>True</Paket>
-      <Link>FSharp.Data/JsonInference.fs</Link>
-    </Compile>
-    <Compile Include="..\paket-files\fsharp\FSharp.Data\src\Json\JsonConversionsGenerator.fs">
-      <Paket>True</Paket>
-      <Link>FSharp.Data/JsonConversionsGenerator.fs</Link>
-    </Compile>
-    <Compile Include="..\paket-files\fsharp\FSharp.Data\src\Json\JsonGenerator.fs">
-      <Paket>True</Paket>
-      <Link>FSharp.Data/JsonGenerator.fs</Link>
-    </Compile>
-    <Compile Include="..\paket-files\fsharp\FSharp.Data\src\Json\JsonProvider.fs">
-      <Paket>True</Paket>
-      <Link>FSharp.Data/JsonProvider.fs</Link>
-    </Compile>
     <Compile Include="Helper.fs" />
     <Compile Include="Data.fs" />
     <Compile Include="TypeProviderBridge.fs" />
@@ -171,6 +67,9 @@
     <Compile Include="JsonProviderCodeRefactoringProvider.fs" />
   </ItemGroup>
   <ItemGroup>
+    <Reference Include="FSharp.Data.DesignTime">
+      <HintPath>..\packages\FSharp.Data\lib\net40\FSharp.Data.DesignTime.dll</HintPath>
+    </Reference>
     <Reference Include="mscorlib" />
     <Reference Include="System" />
     <Reference Include="System.Core" />

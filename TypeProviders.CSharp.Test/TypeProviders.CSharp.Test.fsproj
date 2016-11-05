@@ -102,8 +102,8 @@
   <ItemGroup>
     <Compile Include="AssemblyInfo.fs" />
     <Compile Include="CodeGenerationTest.fs" />
-    <Compile Include="ParseTests.fs" />
-    <Compile Include="UniqueNameTests.fs" />
+    <Compile Include="TypeProviderParserTests.fs" />
+    <Compile Include="DataTypeUpdateTests.fs" />
     <None Include="paket.references" />
     <Content Include="App.config" />
   </ItemGroup>

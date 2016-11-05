@@ -1,4 +1,4 @@
-﻿module TypeProviders.CSharp.CreationMethods
+﻿module TypeProviders.CSharp.CodeGeneration
 
 open ProviderImplementation.ProvidedTypes
 open System
@@ -190,36 +190,65 @@ let getCreationMethods (rootTypeSyntax: TypeSyntax) sampleData =
         getFromStringMethod rootTypeSyntax
     ]
 
+let toSyntaxKind = function
+    | TBool -> SyntaxKind.BoolKeyword
+    | TByte -> SyntaxKind.ByteKeyword
+    | TSByte -> SyntaxKind.SByteKeyword
+    | TChar -> SyntaxKind.CharKeyword
+    | TDecimal -> SyntaxKind.DecimalKeyword
+    | TDouble -> SyntaxKind.DoubleKeyword
+    | TFloat -> SyntaxKind.FloatKeyword
+    | TInt -> SyntaxKind.IntKeyword
+    | TUInt -> SyntaxKind.UIntKeyword
+    | TLong -> SyntaxKind.LongKeyword
+    | TULong -> SyntaxKind.ULongKeyword
+    | TObject -> SyntaxKind.ObjectKeyword
+    | TShort -> SyntaxKind.ShortKeyword
+    | TUShort -> SyntaxKind.UShortKeyword
+    | TString -> SyntaxKind.StringKeyword
+
+let rec getTypeSyntax = function
+    | Common s -> SyntaxFactory.ParseTypeName s
+    | Collection s ->
+        SyntaxFactory.QualifiedName(
+            SyntaxFactory.QualifiedName(
+                SyntaxFactory.QualifiedName(
+                    SyntaxFactory.IdentifierName "System",
+                    SyntaxFactory.IdentifierName "Collections"
+                ),
+                SyntaxFactory.IdentifierName "Generic"
+            ),
+            SyntaxFactory.GenericName(
+                SyntaxFactory.Identifier "IReadOnlyList",
+                getTypeSyntax s
+                |> SyntaxFactory.SingletonSeparatedList
+                |> SyntaxFactory.TypeArgumentList
+            )
+        )
+        :> TypeSyntax
+    | Predefined csType ->
+        csType
+        |> toSyntaxKind
+        |> SyntaxFactory.Token
+        |> SyntaxFactory.PredefinedType
+        :> TypeSyntax
+    | Optional t ->
+        getTypeSyntax t
+        |> SyntaxFactory.NullableType
+        :> TypeSyntax
+
 let generateCreationMethods dataType sampleData =
-    let rootTypeSyntax = TypeProviderBridge.getTypeSyntax dataType.ReturnTypeFromParsingData
+    let rootTypeSyntax = getTypeSyntax dataType.ReturnTypeFromParsingData
     getCreationMethods rootTypeSyntax sampleData
     |> Seq.cast<MemberDeclarationSyntax>
 
 let generateJsonType dataTypeMember =
     let rec convertDataTypeMember dataTypeMember =
-//        let convertTypeProviderMethod (m: ProvidedMethod) =
-//            let invokerArgs =
-//                m.GetParameters()
-//                |> Seq.mapi (fun idx p ->
-//                    Quotations.Var(sprintf "arg%d" idx, p.ParameterType)
-//                )
-//                |> Seq.map Microsoft.FSharp.Quotations.Expr.Var
-//                |> Seq.toArray
-//
-//            let expr = tp.GetInvokerExpression(m, invokerArgs)
-//
-//            // ...
-//
-//            SyntaxFactory.MethodDeclaration(
-//                CreationMethods.getTypeSyntax m.ReturnType,
-//                SyntaxFactory.Identifier m.Name
-//            )
-
         match dataTypeMember with
         | Property (name, propertyType) ->
             SyntaxFactory
                 .PropertyDeclaration(
-                    TypeProviderBridge.getTypeSyntax propertyType,
+                    getTypeSyntax propertyType,
                     SyntaxFactory.Identifier name
                 )
                 .WithModifiers(
@@ -245,7 +274,7 @@ let generateJsonType dataTypeMember =
                 members
                 |> List.choose (function
                     | Property (name, propertyType) ->
-                        Some (name, TypeProviderBridge.getTypeSyntax propertyType)
+                        Some (name, getTypeSyntax propertyType)
                     | _ -> None
                 )
 

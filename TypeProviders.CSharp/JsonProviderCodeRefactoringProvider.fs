@@ -17,9 +17,7 @@ open FSharp.Data.Runtime.BaseTypes
 open Microsoft.FSharp.Core.CompilerServices
 open System.Reflection
 open System.IO
-open ProviderImplementation.ProviderHelpers
 open ProviderImplementation.ProvidedTypes
-open ProviderImplementation.AssemblyResolver
 
 [<ExportCodeRefactoringProvider(LanguageNames.CSharp, Name = "JsonProviderCodeRefactoringProvider")>]
 [<Shared>]
@@ -50,7 +48,7 @@ type JsonProviderCodeRefactoringProvider() =
             let! syntaxRoot = document.GetSyntaxRootAsync ct |> Async.awaitTaskAllowContextSwitch
 
             try
-                let args = {
+                let args: JsonProviderArgs = {
                     Sample = sampleData
                     SampleIsList = false
                     RootName = "Root"
@@ -62,11 +60,11 @@ type JsonProviderCodeRefactoringProvider() =
                 }
                 let dataType =
                     JsonProviderBridge.parseDataType args
-                    |> JsonProviderBridge.ensureTypeHasNoPropertyWithSameName
+                    |> DataTypeUpdate.CSharp.ensureTypeHasNoPropertyWithSameName
 
                 let members = [
-                    yield! CreationMethods.generateDataStructure dataType
-                    yield! CreationMethods.generateCreationMethods dataType sampleData
+                    yield! CodeGeneration.generateDataStructure dataType
+                    yield! CodeGeneration.generateCreationMethods dataType sampleData
                 ]
 
                 let newTypeDecl =

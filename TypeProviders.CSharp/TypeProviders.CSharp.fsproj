@@ -61,9 +61,11 @@
     <Compile Include="AssemblyInfo.fs" />
     <Compile Include="Helper.fs" />
     <Compile Include="Data.fs" />
-    <Compile Include="TypeProviderBridge.fs" />
-    <Compile Include="CreationMethods.fs" />
+    <Compile Include="TypeName.fs" />
+    <Compile Include="TypeProviderParser.fs" />
     <Compile Include="JsonProviderBridge.fs" />
+    <Compile Include="DataTypeUpdate.fs" />
+    <Compile Include="CodeGeneration.fs" />
     <Compile Include="JsonProviderCodeRefactoringProvider.fs" />
   </ItemGroup>
   <ItemGroup>

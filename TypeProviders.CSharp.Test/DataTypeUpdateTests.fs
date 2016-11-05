@@ -1,4 +1,4 @@
-﻿module TypeProviders.CSharp.Test.UniqueNameTests
+﻿module TypeProviders.CSharp.Test.DataTypeUpdateTests
 
 open Swensen.Unquote
 open Xunit
@@ -28,7 +28,7 @@ let ``Should not change anything when names dont collide``() =
         ]
     }
 
-    JsonProviderBridge.ensureTypeHasNoPropertyWithSameName input =! input
+    DataTypeUpdate.CSharp.ensureTypeHasNoPropertyWithSameName input =! input
 
 [<Fact>]
 let ``Should change type name when names collide``() =
@@ -53,7 +53,7 @@ let ``Should change type name when names collide``() =
                     )
             ]
         }
-        |> JsonProviderBridge.ensureTypeHasNoPropertyWithSameName
+        |> DataTypeUpdate.CSharp.ensureTypeHasNoPropertyWithSameName
 
     let expected = {
         ReturnTypeFromParsingData = Common "Root" |> Collection

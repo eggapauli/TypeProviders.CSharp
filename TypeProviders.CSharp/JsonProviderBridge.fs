@@ -1,33 +1,21 @@
 ﻿namespace TypeProviders.CSharp
 
-type JsonProviderArgs = {
-    Sample: string
-    SampleIsList: bool
-    RootName: string
-    Culture: string
-    Encoding: string
-    ResolutionFolder: string
-    EmbeddedResource: string
-    InferTypesFromValues: bool
-}
+open ProviderImplementation
 
-[<AutoOpen>]
-module JsonProviderArgs_ =
-    module JsonProviderArgs =
-        let create sample = {
-            Sample = sample
-            SampleIsList = false
-            RootName = ""
-            Culture = ""
-            Encoding = ""
-            ResolutionFolder = ""
-            EmbeddedResource = ""
-            InferTypesFromValues = true
-        }
+module JsonProviderArgs =
+    let create sample = {
+        Sample = sample
+        SampleIsList = false
+        RootName = ""
+        Culture = ""
+        Encoding = ""
+        ResolutionFolder = ""
+        EmbeddedResource = ""
+        InferTypesFromValues = true
+    }
 
 module JsonProviderBridge =
     open System
-    open ProviderImplementation
     open ProviderImplementation.ProvidedTypes
     open Microsoft.FSharp.Core.CompilerServices
     open System.Reflection
@@ -68,7 +56,7 @@ module JsonProviderBridge =
 
         new JsonProvider(cfg)
 
-    let createParametricRootType (typeProvider: TypeProviderForNamespaces) args =
+    let createParametricRootType (typeProvider: TypeProviderForNamespaces) (args: JsonProviderArgs) =
         let rootType =
             typeProvider.Namespaces
             |> Seq.head
@@ -93,80 +81,4 @@ module JsonProviderBridge =
 
         let rootType = createParametricRootType provider args
 
-        let returnType =
-                rootType.GetMethod("Parse").ReturnType
-                |> TypeProviderBridge.getTypeName
-
-        let getChildTypeDefinition provider ty =
-            let rec getChildMemberDefinition (m: MemberInfo) =
-                match m with
-                | :? ProvidedProperty as p ->
-                    Property (p.Name, TypeProviderBridge.getTypeName p.PropertyType)
-                | :? ProvidedTypeDefinition as t ->
-                    let members =
-                        TypeProviderBridge.getMembers t
-                        |> List.map getChildMemberDefinition
-                    SubType (t.Name, members)
-                | _ -> failwithf "Unexpected type member: %s" (m.GetType().FullName)
-
-            getChildMemberDefinition ty
-
-        let members = [
-            yield!
-                rootType.GetNestedTypes()
-                |> Seq.map (getChildTypeDefinition provider)
-        ]
-
-        {
-            ReturnTypeFromParsingData = returnType
-            Members = members
-        }
-
-    let private getTypeRenameMap dataType =
-        let getName = function
-            | SubType (name, _) -> name
-            | Property (name, _) -> name
-
-        let getNames members =
-            members
-            |> List.map getName
-
-        let rec getNonCollidingName originalName names =
-            if List.contains originalName names
-            then getNonCollidingName (sprintf "%s_" originalName) names
-            else originalName
-
-        let rec getTypeRenameMap' = function
-            | SubType (name, members) ->
-                let newName =
-                    getNames members
-                    |> getNonCollidingName name
-                (name, newName) :: (List.collect getTypeRenameMap' members)
-            | x -> []
-
-        List.collect getTypeRenameMap' dataType.Members
-
-    let ensureTypeHasNoPropertyWithSameName dataType =
-        let typeRenameMap = getTypeRenameMap dataType |> Map.ofList
-
-        let getNewName name =
-            Map.tryFind name typeRenameMap
-            |> Option.ifNone name
-
-        let rec updatePropertyType = function
-            | Common name -> getNewName name |> Common
-            | Collection t -> updatePropertyType t |> Collection
-            | Optional t -> updatePropertyType t |> Optional
-            | Predefined t -> Predefined t
-
-        let rec updateDataTypeMember = function
-            | SubType (name, members) ->
-                let newName = getNewName name
-                let newMembers =
-                    members
-                    |> List.map updateDataTypeMember
-                SubType (newName, newMembers)
-            | Property (name, propertyType) ->
-                Property (name, updatePropertyType propertyType)
-
-        { dataType with Members = List.map updateDataTypeMember dataType.Members }
+        TypeProviderParser.parseDataType rootType

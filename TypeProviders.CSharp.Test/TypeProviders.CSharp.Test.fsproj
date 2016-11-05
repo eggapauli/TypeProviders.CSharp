@@ -100,11 +100,11 @@
   </Target>
   -->
   <ItemGroup>
+    <None Include="paket.references" />
     <Compile Include="AssemblyInfo.fs" />
     <Compile Include="CodeGenerationTest.fs" />
     <Compile Include="TypeProviderParserTests.fs" />
     <Compile Include="DataTypeUpdateTests.fs" />
-    <None Include="paket.references" />
     <Content Include="App.config" />
   </ItemGroup>
   <ItemGroup>

@@ -5,14 +5,14 @@
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <SchemaVersion>2.0</SchemaVersion>
-    <ProjectGuid>31ab63ec-7f2f-4e1d-9266-ad53f1500d30</ProjectGuid>
+    <ProjectGuid>3cf28cb0-4837-4d1a-aa32-54969eb747b0</ProjectGuid>
     <OutputType>Library</OutputType>
-    <RootNamespace>TypeProviders.CSharp</RootNamespace>
-    <AssemblyName>TypeProviders.CSharp</AssemblyName>
+    <RootNamespace>TypeProviders.CSharp.CodeRefactoringProvider</RootNamespace>
+    <AssemblyName>TypeProviders.CSharp.CodeRefactoringProvider</AssemblyName>
     <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
     <TargetFSharpCoreVersion>4.4.0.0</TargetFSharpCoreVersion>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
-    <Name>TypeProviders.CSharp</Name>
+    <Name>TypeProviders.CSharp.CodeRefactoringProvider</Name>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -22,7 +22,7 @@
     <OutputPath>bin\Debug\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <WarningLevel>3</WarningLevel>
-    <DocumentationFile>bin\Debug\TypeProviders.CSharp.XML</DocumentationFile>
+    <DocumentationFile>bin\Debug\TypeProviders.CSharp.CodeRefactoringProvider.XML</DocumentationFile>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -31,7 +31,7 @@
     <OutputPath>bin\Release\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
     <WarningLevel>3</WarningLevel>
-    <DocumentationFile>bin\Release\TypeProviders.CSharp.XML</DocumentationFile>
+    <DocumentationFile>bin\Release\TypeProviders.CSharp.CodeRefactoringProvider.XML</DocumentationFile>
   </PropertyGroup>
   <PropertyGroup>
     <MinimumVisualStudioVersion Condition="'$(MinimumVisualStudioVersion)' == ''">11</MinimumVisualStudioVersion>
@@ -49,23 +49,10 @@
     </Otherwise>
   </Choose>
   <Import Project="$(FSharpTargetsPath)" />
-  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
-       Other similar extension points exist, see Microsoft.Common.targets.
-  <Target Name="BeforeBuild">
-  </Target>
-  <Target Name="AfterBuild">
-  </Target>
-  -->
   <ItemGroup>
     <None Include="paket.references" />
     <Compile Include="AssemblyInfo.fs" />
-    <Compile Include="Helper.fs" />
-    <Compile Include="Data.fs" />
-    <Compile Include="TypeName.fs" />
-    <Compile Include="TypeProviderParser.fs" />
-    <Compile Include="JsonProviderBridge.fs" />
-    <Compile Include="DataTypeUpdate.fs" />
-    <Compile Include="CodeGeneration.fs" />
+    <Compile Include="JsonProviderCodeRefactoringProvider.fs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="FSharp.Data.DesignTime">
@@ -75,8 +62,26 @@
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Numerics" />
-    <Reference Include="System.Xml.Linq" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\TypeProviders.CSharp.Providers\TypeProviders.CSharp.Providers.csproj">
+      <Name>TypeProviders.CSharp.Providers</Name>
+      <Project>{9472fd81-2e89-4040-be91-1f861969f505}</Project>
+      <Private>True</Private>
+    </ProjectReference>
+    <ProjectReference Include="..\TypeProviders.CSharp\TypeProviders.CSharp.fsproj">
+      <Name>TypeProviders.CSharp</Name>
+      <Project>{31ab63ec-7f2f-4e1d-9266-ad53f1500d30}</Project>
+      <Private>True</Private>
+    </ProjectReference>
+  </ItemGroup>
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
   <Choose>
     <When Condition="$(TargetFrameworkIdentifier) == '.NETFramework' And ($(TargetFrameworkVersion) == 'v2.0' Or $(TargetFrameworkVersion) == 'v3.0' Or $(TargetFrameworkVersion) == 'v3.5')">
       <ItemGroup>

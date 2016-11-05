@@ -1,23 +1,15 @@
 namespace TypeProviders.CSharp
 
+open System
+open System.Composition
+open System.Threading
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.CodeActions
 open Microsoft.CodeAnalysis.CodeRefactorings
 open Microsoft.CodeAnalysis.CSharp
 open Microsoft.CodeAnalysis.CSharp.Syntax
 open Microsoft.CodeAnalysis.Formatting
-open System.Composition
-open System
-open System.Threading
 open ProviderImplementation
-open FSharp.Data.Runtime
-open FSharp.Data.Runtime.StructuralTypes
-open FSharp.Data
-open FSharp.Data.Runtime.BaseTypes
-open Microsoft.FSharp.Core.CompilerServices
-open System.Reflection
-open System.IO
-open ProviderImplementation.ProvidedTypes
 
 [<ExportCodeRefactoringProvider(LanguageNames.CSharp, Name = "JsonProviderCodeRefactoringProvider")>]
 [<Shared>]
@@ -43,25 +35,11 @@ type JsonProviderCodeRefactoringProvider() =
             |> Option.cast<string>
         )
 
-    let updateTypeProviderAsync (document: Document) (typeDecl: ClassDeclarationSyntax) (sampleData: string) (ct: CancellationToken) =
+    let generateCode dataType (document: Document) (typeDecl: ClassDeclarationSyntax) sampleData (ct: CancellationToken) =
         async {
             let! syntaxRoot = document.GetSyntaxRootAsync ct |> Async.awaitTaskAllowContextSwitch
 
             try
-                let args: JsonProviderArgs = {
-                    Sample = sampleData
-                    SampleIsList = false
-                    RootName = "Root"
-                    Culture = ""
-                    Encoding = ""
-                    ResolutionFolder = ""
-                    EmbeddedResource = ""
-                    InferTypesFromValues = true
-                }
-                let dataType =
-                    JsonProviderBridge.parseDataType args
-                    |> DataTypeUpdate.CSharp.ensureTypeHasNoPropertyWithSameName
-
                 let members = [
                     yield! CodeGeneration.generateDataStructure dataType
                     yield! CodeGeneration.generateCreationMethods dataType sampleData
@@ -92,37 +70,67 @@ type JsonProviderCodeRefactoringProvider() =
                     |> document.WithSyntaxRoot
         }
 
+    let updateTypeProviderAsync document typeDecl sampleData ct =
+        let args: JsonProviderArgs = {
+            Sample = sampleData
+            SampleIsList = false
+            RootName = "Root"
+            Culture = ""
+            Encoding = ""
+            ResolutionFolder = ""
+            EmbeddedResource = ""
+            InferTypesFromValues = true
+        }
+        let dataType =
+            JsonProviderBridge.parseDataType args
+            |> DataTypeUpdate.CSharp.ensureTypeHasNoPropertyWithSameName
+
+        generateCode dataType document typeDecl sampleData ct
+
+    let getSemanticModel (document: Document) ct =
+        document.GetSemanticModelAsync ct
+        |> Async.awaitTaskAllowContextSwitch
+
+    let createCodeAction document typeDecl sampleData =
+        CodeAction.Create(
+            "Generate members from sample data",
+            Func<_, _>(updateTypeProviderAsync document typeDecl sampleData >> Async.StartAsTask)
+        )
+
+    let getRefactorings document typeDecl attributeFullName ct = async {
+        let! semanticModel = getSemanticModel document ct
+
+        return
+            tryGetTypeProviderSampleData typeDecl attributeFullName semanticModel
+            |> Option.map (createCodeAction document typeDecl)
+            |> Option.toList
+    }
+
+    let findContextNode (context: CodeRefactoringContext) = async {
+        let! root =
+            context
+                .Document
+                .GetSyntaxRootAsync(context.CancellationToken)
+            |> Async.awaitTaskAllowContextSwitch
+
+        return root.FindNode context.Span
+    }
+
     override x.ComputeRefactoringsAsync (context: CodeRefactoringContext) =
         async {
-            let! root =
-                context
-                    .Document
-                    .GetSyntaxRootAsync(context.CancellationToken)
-                |> Async.awaitTaskAllowContextSwitch
+            try
+                let! node = findContextNode context
 
-            let node = root.FindNode context.Span
+                let! refactorings =
+                    match node with
+                    | :? ClassDeclarationSyntax as typeDecl ->
+                        getRefactorings context.Document typeDecl attributeFullName context.CancellationToken
+                    | _ ->  async { return [] }
 
-            return!
-                node :?> ClassDeclarationSyntax
-                |> Option.ofObj
-                |> Option.map (fun typeDecl -> async {
-                    let! semanticModel =
-                        context
-                            .Document
-                            .GetSemanticModelAsync(context.CancellationToken)
-                        |> Async.awaitTaskAllowContextSwitch
-
-                    tryGetTypeProviderSampleData typeDecl attributeFullName semanticModel
-                    |> Option.iter (fun sampleData ->
-                        CodeAction.Create
-                            (
-                                "Synchronize type provider with sample data",
-                                Func<_, _>(updateTypeProviderAsync context.Document typeDecl sampleData >> Async.StartAsTask)
-                            )
-                        |> context.RegisterRefactoring
-                    )
-                })
-                |> Option.ifNone (async { return () })
+                refactorings
+                |> List.iter context.RegisterRefactoring
+            with e ->
+                printfn "%O" e
         }
         |> Async.StartAsTask
         :> System.Threading.Tasks.Task

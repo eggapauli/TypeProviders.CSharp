@@ -8,15 +8,19 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".paket", ".paket", "{5210E2
 		paket.dependencies = paket.dependencies
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TypeProviders.CSharp.Providers", "TypeProviders.CSharp.Providers\TypeProviders.CSharp.Providers.csproj", "{9472FD81-2E89-4040-BE91-1F861969F505}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TypeProviders.CSharp.CodeRefactoringProvider.ProviderAttributes", "TypeProviders.CSharp.CodeRefactoringProvider.ProviderAttributes\TypeProviders.CSharp.CodeRefactoringProvider.ProviderAttributes.csproj", "{9472FD81-2E89-4040-BE91-1F861969F505}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TypeProviders.CSharp.Vsix", "TypeProviders.CSharp.Vsix\TypeProviders.CSharp.Vsix.csproj", "{076E32A3-CF29-4B09-87A3-3BD3B6D2C01A}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TypeProviders.CSharp.CodeRefactoringProvider.Vsix", "TypeProviders.CSharp.CodeRefactoringProvider.Vsix\TypeProviders.CSharp.CodeRefactoringProvider.Vsix.csproj", "{076E32A3-CF29-4B09-87A3-3BD3B6D2C01A}"
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "TypeProviders.CSharp", "TypeProviders.CSharp\TypeProviders.CSharp.fsproj", "{31AB63EC-7F2F-4E1D-9266-AD53F1500D30}"
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "TypeProviders.CSharp.Test", "TypeProviders.CSharp.Test\TypeProviders.CSharp.Test.fsproj", "{EA427029-A2FD-499D-ABC8-8BF7BACFF96B}"
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "TypeProviders.CSharp.CodeRefactoringProvider", "TypeProviders.CSharp.CodeRefactoringProvider\TypeProviders.CSharp.CodeRefactoringProvider.fsproj", "{3CF28CB0-4837-4D1A-AA32-54969EB747B0}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "CodeRefactoringProvider", "CodeRefactoringProvider", "{547F7D3E-3997-44F2-BCD5-7AE0DDE13214}"
+EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "TypeProviders.CSharp.CodeRefactoringProvider.Test", "TypeProviders.CSharp.CodeRefactoringProvider.Test\TypeProviders.CSharp.CodeRefactoringProvider.Test.fsproj", "{63F0CF7A-8265-42B8-8744-4303BD826A82}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -44,8 +48,18 @@ Global
 		{3CF28CB0-4837-4D1A-AA32-54969EB747B0}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3CF28CB0-4837-4D1A-AA32-54969EB747B0}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3CF28CB0-4837-4D1A-AA32-54969EB747B0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{63F0CF7A-8265-42B8-8744-4303BD826A82}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{63F0CF7A-8265-42B8-8744-4303BD826A82}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{63F0CF7A-8265-42B8-8744-4303BD826A82}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{63F0CF7A-8265-42B8-8744-4303BD826A82}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{9472FD81-2E89-4040-BE91-1F861969F505} = {547F7D3E-3997-44F2-BCD5-7AE0DDE13214}
+		{076E32A3-CF29-4B09-87A3-3BD3B6D2C01A} = {547F7D3E-3997-44F2-BCD5-7AE0DDE13214}
+		{3CF28CB0-4837-4D1A-AA32-54969EB747B0} = {547F7D3E-3997-44F2-BCD5-7AE0DDE13214}
+		{63F0CF7A-8265-42B8-8744-4303BD826A82} = {547F7D3E-3997-44F2-BCD5-7AE0DDE13214}
 	EndGlobalSection
 EndGlobal

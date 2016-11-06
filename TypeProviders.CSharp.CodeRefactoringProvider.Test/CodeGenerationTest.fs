@@ -1,4 +1,4 @@
-﻿module TypeProviders.CSharp.Test.JsonProvider
+﻿module TypeProviders.CSharp.Test.CodeGeneration
 
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.CodeActions
@@ -74,7 +74,7 @@ let createDocument (code: string) =
     let cSharpSymbolsReference = metaDataReferenceFromType<CSharpCompilation>
     let codeAnalysisReference = metaDataReferenceFromType<Compilation>
     let netHttpReference = MetadataReference.CreateFromFile(Assembly.Load("System.Net.Http, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a").Location)
-    let typeProvidersAssembly = metaDataReferenceFromType<TypeProviders.CSharp.Providers.JsonProviderAttribute>
+    let typeProvidersAssembly = metaDataReferenceFromType<TypeProviders.CSharp.JsonProviderAttribute>
     let systemRuntimeReference = MetadataReference.CreateFromFile(Assembly.Load("System.Runtime, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a").Location)
     let jsonNetReference = metaDataReferenceFromType<Newtonsoft.Json.JsonConvert>
 
@@ -142,7 +142,7 @@ let ``Should not have refactoring when attribute not set``() =
 [<Fact>]
 let ``Should not have refactoring when sample data argument is missing``() =
     let code = """
-[TypeProviders.CSharp.Providers.JsonProvider]
+[TypeProviders.CSharp.JsonProvider]
 class TestProvider
 {
 }
@@ -154,7 +154,7 @@ class TestProvider
 [<Fact>]
 let ``Should not have refactoring when sample data argument has wrong type``() =
     let code = """
-[TypeProviders.CSharp.Providers.JsonProvider(5)]
+[TypeProviders.CSharp.JsonProvider(5)]
 class TestProvider
 {
 }
@@ -166,7 +166,7 @@ class TestProvider
 [<Fact>]
 let ``Should have refactoring for simple sample data``() =
     let code = """
-[TypeProviders.CSharp.Providers.JsonProvider("{ \"asd\": \"qwe\" }")]
+[TypeProviders.CSharp.JsonProvider("{ \"asd\": \"qwe\" }")]
 class TestProvider
 {
 }
@@ -193,7 +193,7 @@ let ``Should refactor according to complex object``() =
     ]
 }"""
     let minifiedJson = System.Text.RegularExpressions.Regex.Replace(json, "\r\n\s*", "")
-    let attribute = sprintf """[TypeProviders.CSharp.Providers.JsonProvider("%s")]""" minifiedJson
+    let attribute = sprintf """[TypeProviders.CSharp.JsonProvider("%s")]""" minifiedJson
 
     let code = attribute + """
 class TestProvider
@@ -276,7 +276,7 @@ module String =
 [<InlineData("http://example.com/not-existing-url")>]
 [<InlineData("file:///C:/data.json")>]
 let ``Should show message when sample data is invalid``sampleData =
-    let attribute = sprintf """[TypeProviders.CSharp.Providers.JsonProvider("%s")]""" sampleData
+    let attribute = sprintf """[TypeProviders.CSharp.JsonProvider("%s")]""" sampleData
 
     let code = attribute + """
 class TestProvider

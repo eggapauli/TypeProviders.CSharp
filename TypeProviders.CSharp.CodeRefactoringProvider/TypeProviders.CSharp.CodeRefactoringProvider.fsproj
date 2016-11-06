@@ -64,8 +64,8 @@
     <Reference Include="System.Numerics" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\TypeProviders.CSharp.Providers\TypeProviders.CSharp.Providers.csproj">
-      <Name>TypeProviders.CSharp.Providers</Name>
+    <ProjectReference Include="..\TypeProviders.CSharp.CodeRefactoringProvider.ProviderAttributes\TypeProviders.CSharp.CodeRefactoringProvider.ProviderAttributes.csproj">
+      <Name>TypeProviders.CSharp.CodeRefactoringProvider.ProviderAttributes</Name>
       <Project>{9472fd81-2e89-4040-be91-1f861969f505}</Project>
       <Private>True</Private>
     </ProjectReference>

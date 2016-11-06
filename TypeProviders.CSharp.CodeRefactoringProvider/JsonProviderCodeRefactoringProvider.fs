@@ -16,7 +16,7 @@ open ProviderImplementation
 type JsonProviderCodeRefactoringProvider() =
     inherit CodeRefactoringProvider()
 
-    let attributeFullName = typeof<Providers.JsonProviderAttribute>.FullName
+    let attributeFullName = typeof<JsonProviderAttribute>.FullName
 
     let tryGetTypeProviderSampleData (typeDecl: SyntaxNode) typeProviderAttributeName (semanticModel: SemanticModel) =
         semanticModel

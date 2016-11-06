@@ -1,4 +1,4 @@
-﻿module TypeProviders.CSharp.Test.DataTypeUpdateTests
+﻿module TypeProviders.CSharp.Test.DataTypeUpdate
 
 open Swensen.Unquote
 open Xunit

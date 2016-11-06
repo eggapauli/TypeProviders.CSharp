@@ -17,6 +17,6 @@
     <Assets>
         <Asset Type="Microsoft.VisualStudio.MefComponent" d:Source="Project" d:ProjectName="TypeProviders.CSharp.CodeRefactoringProvider" Path="|TypeProviders.CSharp.CodeRefactoringProvider|" />
         <Asset Type="Microsoft.VisualStudio.Assembly" d:Source="Project" d:ProjectName="TypeProviders.CSharp" Path="|TypeProviders.CSharp|" AssemblyName="|TypeProviders.CSharp;AssemblyName|" />
-        <Asset Type="Microsoft.VisualStudio.Assembly" d:Source="Project" d:ProjectName="TypeProviders.CSharp.Providers" Path="|TypeProviders.CSharp.Providers|" AssemblyName="|TypeProviders.CSharp.Providers;AssemblyName|" />
+        <Asset Type="Microsoft.VisualStudio.Assembly" d:Source="Project" d:ProjectName="TypeProviders.CSharp.CodeRefactoringProvider.ProviderAttributes" Path="|TypeProviders.CSharp.CodeRefactoringProvider.ProviderAttributes|" AssemblyName="|TypeProviders.CSharp.CodeRefactoringProvider.ProviderAttributes;AssemblyName|" />
     </Assets>
 </PackageManifest>

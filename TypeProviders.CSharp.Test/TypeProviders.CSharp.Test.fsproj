@@ -115,6 +115,11 @@
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Numerics" />
+    <ProjectReference Include="..\TypeProviders.CSharp.CodeRefactoringProvider\TypeProviders.CSharp.CodeRefactoringProvider.fsproj">
+      <Name>TypeProviders.CSharp.CodeRefactoringProvider</Name>
+      <Project>{3cf28cb0-4837-4d1a-aa32-54969eb747b0}</Project>
+      <Private>True</Private>
+    </ProjectReference>
     <ProjectReference Include="..\TypeProviders.CSharp.Providers\TypeProviders.CSharp.Providers.csproj">
       <Name>TypeProviders.CSharp.Providers</Name>
       <Project>{9472fd81-2e89-4040-be91-1f861969f505}</Project>

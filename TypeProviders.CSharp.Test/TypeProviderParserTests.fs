@@ -7,12 +7,13 @@ open TypeProviders.CSharp
 let propertyTypeTestData: obj array array = [|
     [| "\"asdqwe\""; Predefined TString |]
     [| "5"; Predefined TInt |]
-    [| "5.123"; Predefined TDouble |]
+    //[| "5.123"; Predefined TDouble |] // FSharp.Data parses it as decimal
+    [| "5.123"; Predefined TDecimal |]
     [| "true"; Predefined TBool |]
     [| "\"2009-06-15T13:45:30Z\""; Common "System.DateTime" |]
     [| "\"7E22EDE9-6D0F-48C2-A280-B36DC859435D\""; Common "System.Guid" |]
-    [| "\"05:04:03\""; Common "System.TimeSpan" |]
-    [| "\"http://example.com/path?query#hash\""; Common "System.Uri" |]
+    //[| "\"05:04:03\""; Common "System.TimeSpan" |] // No support in FSharp.Data
+    //[| "\"http://example.com/path?query#hash\""; Common "System.Uri" |] // No support in FSharp.Data
 |]
 
 [<Theory>]

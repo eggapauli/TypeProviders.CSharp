@@ -1,8 +1,10 @@
 ﻿namespace TypeProviders.CSharp
 
 open ProviderImplementation
+open TypeProviderArgs
 
 module JsonProviderArgs =
+
     let create sample = {
         Sample = sample
         SampleIsList = false

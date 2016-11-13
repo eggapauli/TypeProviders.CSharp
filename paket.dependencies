@@ -5,7 +5,7 @@ nuget CodeGeneration.Roslyn
 nuget CodeGeneration.Roslyn.BuildTime
 nuget FSharp.Core
 nuget Newtonsoft.Json
-nuget Microsoft.CodeAnalysis.CSharp.Workspaces
+nuget Microsoft.CodeAnalysis.CSharp.Workspaces = 1.1.1
 nuget Unquote
 nuget xunit
 nuget xunit.runner.visualstudio version_in_path:true

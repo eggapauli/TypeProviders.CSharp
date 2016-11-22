@@ -47,43 +47,51 @@ type JsonProviderGenerator(attributeData: AttributeData) =
 
     interface ICodeGenerator with
         member x.GenerateAsync(applyTo: MemberDeclarationSyntax, document: Document, progress: IProgress<Diagnostic>, ct) =
-            let parseSampleData =
-                JsonProviderArgs.create
-                >> JsonProviderBridge.parseDataType
+//             [
+//                 yield sprintf "Location: %s" (System.Reflection.Assembly.GetExecutingAssembly().Location)
+//             ]
+//             |> String.concat Environment.NewLine
+//             |> Debug
+//             |> Diagnostics.create (applyTo.GetLocation())
+//             |> progress.Report
+//             Task.FromResult (SyntaxFactory.List())
+           let parseSampleData =
+               JsonProviderArgs.create
+               >> JsonProviderBridge.parseDataType
 
-            applyTo
-            :?> ClassDeclarationSyntax
-            |> Option.ofObj
-            |> Option.map (fun typeDecl ->
-                let members =
-                    try
-                        let dataType = 
-                            parseSampleData sampleData
-                            |> DataTypeUpdate.CSharp.ensureTypeHasNoPropertyWithSameName
-                    
-                        [
-                            yield! CodeGeneration.generateDataStructure dataType
-                            yield! CodeGeneration.generateCreationMethods dataType sampleData
-                        ]
-                    with e ->
-                        GeneralError ("Error while generating code", e.Message)
-                        |> Diagnostics.create (applyTo.GetLocation())
-                        |> progress.Report
+           applyTo
+           :?> ClassDeclarationSyntax
+           |> Option.ofObj
+           |> Option.map (fun typeDecl ->
+               let members =
+                   try
+                       let dataType = 
+                           parseSampleData sampleData
+                           |> DataTypeUpdate.CSharp.ensureTypeHasNoPropertyWithSameName
+                   
+                       [
+                           yield! CodeGeneration.generateDataStructure dataType
+                           yield! CodeGeneration.generateCreationMethods dataType sampleData
+                       ]
+                   with e ->
+                       GeneralError ("Error while generating code", e.Message)
+                       |> Diagnostics.create (applyTo.GetLocation())
+                       |> progress.Report
 
-                        reraise()
+                       reraise()
 
-                        []
+                       []
 
-                let partialClass =
-                    SyntaxFactory
-                        .ClassDeclaration(typeDecl.Identifier)
-                        .AddModifiers(SyntaxFactory.Token SyntaxKind.PartialKeyword)
-                        .WithMembers(SyntaxFactory.List members)
+               let partialClass =
+                   SyntaxFactory
+                       .ClassDeclaration(typeDecl.Identifier)
+                       .AddModifiers(SyntaxFactory.Token SyntaxKind.PartialKeyword)
+                       .WithMembers(SyntaxFactory.List members)
 
-                partialClass
-                :> MemberDeclarationSyntax
-                |> List.singleton
-            )
-            |> Option.ifNone []
-            |> SyntaxFactory.List
-            |> Task.FromResult
+               partialClass
+               :> MemberDeclarationSyntax
+               |> List.singleton
+           )
+           |> Option.ifNone []
+           |> SyntaxFactory.List
+           |> Task.FromResult

@@ -4,37 +4,11 @@ source https://api.nuget.org/v3/index.json
 nuget CodeGeneration.Roslyn
 nuget CodeGeneration.Roslyn.BuildTime
 nuget FSharp.Core
+nuget FSharp.Data
+nuget ILRepack
 nuget Newtonsoft.Json
 nuget Microsoft.CodeAnalysis.CSharp.Workspaces = 1.1.1
+nuget System.Collections.Immutable = 1.1.37
 nuget Unquote
 nuget xunit
 nuget xunit.runner.visualstudio version_in_path:true
-
-github fsharp/FSharp.Data src/Json/JsonValue.fs
-github fsharp/FSharp.Data src/Json/JsonConversions.fs
-github fsharp/FSharp.Data src/Json/JsonExtensions.fs
-github fsharp/FSharp.Data src/Json/JsonRuntime.fs
-github fsharp/FSharp.Data src/Json/JsonInference.fs
-github fsharp/FSharp.Data src/Json/JsonConversionsGenerator.fs
-github fsharp/FSharp.Data src/Json/JsonGenerator.fs
-github fsharp/FSharp.Data src/Json/JsonProvider.fs
-github fsharp/FSharp.Data src/CommonRuntime/StructuralTypes.fs
-github fsharp/FSharp.Data src/CommonRuntime/StructuralInference.fs
-github fsharp/FSharp.Data src/CommonRuntime/TextConversions.fs
-github fsharp/FSharp.Data src/CommonRuntime/TextRuntime.fs
-github fsharp/FSharp.Data src/CommonRuntime/NameUtils.fs
-github fsharp/FSharp.Data src/CommonRuntime/IO.fs
-github fsharp/FSharp.Data src/CommonRuntime/Caching.fs
-github fsharp/FSharp.Data src/CommonRuntime/Pluralizer.fs
-github fsharp/FSharp.Data src/DefineConstants.targets
-github fsharp/FSharp.Data src/Net/Http.fs
-github fsharp/FSharp.Data src/Net/UriUtils.fs
-github fsharp/FSharp.Data src/CommonProviderImplementation/Helpers.fs
-github fsharp/FSharp.Data src/CommonProviderImplementation/QuotationBuilder.fs
-github fsharp/FSharp.Data src/CommonProviderImplementation/AssemblyResolver.fs
-#github fsharp/FSharp.Data src/TypeProviderInstantiation.fs
-github fsprojects/FSharp.TypeProviders.StarterPack src/ProvidedTypes.fsi
-github fsprojects/FSharp.TypeProviders.StarterPack src/ProvidedTypes.fs
-github fsprojects/FSharp.TypeProviders.StarterPack src/AssemblyReader.fs
-github fsprojects/FSharp.TypeProviders.StarterPack src/AssemblyReaderReflection.fs
-github fsprojects/FSharp.TypeProviders.StarterPack src/ProvidedTypesContext.fs

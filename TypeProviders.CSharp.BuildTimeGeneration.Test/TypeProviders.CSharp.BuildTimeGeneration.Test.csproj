@@ -60,9 +60,9 @@
     </GeneratorAssemblySearchPaths>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\TypeProviders.CSharp.BuildTimeGeneration\TypeProviders.CSharp.BuildTimeGeneration.fsproj">
-      <Project>{2bdcadd4-f563-4cd8-a404-576350c9471b}</Project>
-      <Name>TypeProviders.CSharp.BuildTimeGeneration</Name>
+    <ProjectReference Include="..\TypeProviders.CSharp.BuildTimeGeneration.RunTime\TypeProviders.CSharp.BuildTimeGeneration.RunTime.fsproj">
+      <Project>{3c2b99de-440f-40c8-b14e-3772f80523b8}</Project>
+      <Name>TypeProviders.CSharp.BuildTimeGeneration.RunTime</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

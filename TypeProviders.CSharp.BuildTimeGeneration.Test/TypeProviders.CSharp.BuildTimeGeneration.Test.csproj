@@ -52,10 +52,10 @@
     <None Include="paket.references" />
   </ItemGroup>
   <ItemGroup>
-    <GeneratorAssemblySearchPaths Include="..\TypeProviders.CSharp.BuildTimeGeneration\bin\$(Configuration)">
+    <GeneratorAssemblySearchPaths Include="..\TypeProviders.CSharp.BuildTimeGeneration\bin\$(Configuration)\ILRepack">
       <Visible>false</Visible>
     </GeneratorAssemblySearchPaths>
-    <GeneratorAssemblySearchPaths Include="..\TypeProviders.CSharp.BuildTimeGeneration\bin\$(Configuration)\ILRepack">
+    <GeneratorAssemblySearchPaths Include="..\TypeProviders.CSharp.BuildTimeGeneration\bin\$(Configuration)">
       <Visible>false</Visible>
     </GeneratorAssemblySearchPaths>
   </ItemGroup>

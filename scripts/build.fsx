@@ -1,59 +1,181 @@
-#r @"lib\FAKE\tools\FakeLib.dll"
+#I @"..\packages"
+#I @"..\packages\build"
+#r @"FAKE\tools\FakeLib.dll"
 
 open System
 open Fake
-open NuGetHelper
 open Testing.XUnit2
+open PaketTemplate
 
-let basePath = FullName "build"
+let repositoryBasePath = __SOURCE_DIRECTORY__ @@ ".."
+let buildBasePath = repositoryBasePath @@ "build"
+let toolsBaseDirectory = repositoryBasePath @@ "packages" @@ "build"
 
-let getVersion() =
-    getBuildParam "GitVersion_AssemblySemVer"
+let assemblyVersion = getBuildParam "GitVersion_AssemblySemVer"
+let nuGetVersion = getBuildParam "GitVersion_NuGetVersion"
+let commitId = getBuildParam "GitVersion_Sha"
 
-Target "Clean" (fun () ->
-    DeleteDir basePath
-)
+let projectDescription = "Generate types out of untyped data (e.g. JSON)."
+
+Target "Clean" <| fun () ->
+    CleanDir buildBasePath
+
+let slnPath = FullName "TypeProviders.CSharp.sln"
 
 let backup file =
+    tracefn "Backing up %s" file
     let backupPath = sprintf "%s.BACKUP" file
     CopyFile backupPath file
     { new IDisposable with
         member x.Dispose() =
+            tracefn "Restoring %s" file
             DeleteFile file
             Rename file backupPath
     }
 
-let slnPath = FullName "TypeProviders.CSharp.sln"
+module CleanUp =
+    let mutable private cleanUpDisposables = []
+    let register (d: IDisposable) =
+        cleanUpDisposables <- d :: cleanUpDisposables
+        ActivateFinalTarget "CleanUp"
 
-Target "Build" (fun () ->
-    let vsixManifestPath = "TypeProviders.CSharp.Vsix" @@ "source.extension.vsixmanifest" |> FullName
-    use x = backup vsixManifestPath
-    XmlPokeNS vsixManifestPath ["x", "http://schemas.microsoft.com/developer/vsx-schema/2011"] "/x:PackageManifest/x:Metadata/x:Identity/@Version" (getVersion())
+    FinalTarget "CleanUp" <| fun () ->
+        cleanUpDisposables
+        |> List.iter (fun d -> d.Dispose())
 
-    let buildPath = basePath @@ "bin"
-    MSBuildRelease buildPath "TypeProviders_CSharp_Vsix:Rebuild" [ slnPath ] |> ignore
-)
+Target "PatchBuildTimeGenerationFiles" <| fun () ->
+    let globalsFile = "TypeProviders.CSharp.BuildTimeGeneration.Attributes" @@ "Globals.cs" |> FullName
+    backup globalsFile |> CleanUp.register
+    let globalsTemplate = sprintf """namespace TypeProviders.CSharp.BuildTimeGeneration.Attributes
+{
+    internal static class Globals
+    {
+        public const string AssemblyVersion = "%s";
+    }
+}"""
+    System.IO.File.WriteAllText(globalsFile, globalsTemplate nuGetVersion)
 
-Target "Test" (fun () ->
-    let buildPath = basePath @@ "test"
-    MSBuildRelease buildPath "TypeProviders_CSharp_Test:Rebuild" [ slnPath ] |> ignore
+module Xml =
+    open System.Xml
+    let modify (fileName: string) fn =
+        let doc = new XmlDocument()
+        doc.Load fileName
+        let doc: XmlDocument = fn doc
+        doc.Save fileName
 
-    let setParams (p: XUnit2Params) =
+Target "PatchCodeRefactoringProviderFiles" <| fun () ->
+    let vsixManifestPath = "TypeProviders.CSharp.CodeRefactoringProvider.Vsix" @@ "source.extension.vsixmanifest" |> FullName
+    backup vsixManifestPath |> CleanUp.register
+    let modifyFn =
+        let namespaces = ["x", "http://schemas.microsoft.com/developer/vsx-schema/2011"]
+        let replaceNode xPath value = XPathReplaceNS xPath value namespaces
+        XPathReplaceNS "/x:PackageManifest/x:Metadata/x:Identity/@Version" assemblyVersion namespaces
+        >> XPathReplaceInnerTextNS "/x:PackageManifest/x:Metadata/x:Description" projectDescription namespaces
+    Xml.modify vsixManifestPath modifyFn
+
+let test =
+    let setXUnitParams (p: XUnit2Params) =
         { p with
             ErrorLevel = Error
             Parallel = All
-            ToolPath = __SOURCE_DIRECTORY__ @@ "lib" @@ "xunit.runner.console" @@ "tools" @@ "xunit.console.exe"
+            ToolPath = toolsBaseDirectory @@ "xunit.runner.console" @@ "tools" @@ "xunit.console.exe"
         }
-    xUnit2 setParams [ buildPath @@ "TypeProviders.CSharp.Test.dll" ]
-)
+    Seq.singleton >> xUnit2 setXUnitParams
 
-Target "Publish" (fun () ->
-    let artifactPath = basePath @@ "bin" @@ "TypeProviders.CSharp.vsix" |> FullName
-    printfn "Build succeeded. Vsix can be found at %s" artifactPath
-)
+Target "TestCore" <| fun () ->
+    let buildPath = buildBasePath @@ "test" @@ "TypeProviders.CSharp.Test"
+    let target = "TypeProviders_CSharp_Test"
+    MSBuildRelease buildPath target [ slnPath ] |> ignore
+    !!(buildPath @@ "*.Test.dll")
+    |> Seq.exactlyOne
+    |> test
 
-"Publish" <== [ "Test" ]
-"Test" <== [ "Build" ]
-"Build" <== [ "Clean" ]
+Target "TestBuildTimeGeneration" <| fun () ->
+    let buildPath = buildBasePath @@ "test" @@ "TypeProviders.CSharp.BuildTimeGeneration.Test"
+    let target = @"BuildTimeGeneration\TypeProviders_CSharp_BuildTimeGeneration_Test"
+    let properties _ = [
+        "GeneratorAssemblyBaseSearchPath", buildPath
+    ]
+    MSBuildWithProjectProperties buildPath target properties [ slnPath ] |> ignore
+    // !!(buildPath @@ "*.Test.dll")
+    // |> Seq.exactlyOne
+    // |> test
 
-RunTargetOrDefault "Publish"
+Target "TestCodeRefactoringProvider" <| fun () ->
+    let buildPath = buildBasePath @@ "test" @@ "TypeProviders.CSharp.CodeRefactoringProvider.Test"
+    let target = @"CodeRefactoringProvider\TypeProviders_CSharp_CodeRefactoringProvider_Test"
+    MSBuildRelease buildPath target [ slnPath ] |> ignore
+    !!(buildPath @@ "*.Test.dll")
+    |> Seq.exactlyOne
+    |> test
+
+Target "CreateCodeRefactoringProviderVsix" <| fun () ->
+    let buildPath = buildBasePath @@ "CodeRefactoringProvider"
+    MSBuildRelease buildPath "CodeRefactoringProvider\TypeProviders_CSharp_CodeRefactoringProvider_Vsix" [ slnPath ] |> ignore
+
+Target "CreateBuildTimeGenerationNuGetPackage" <| fun () ->
+    let buildBasePath = buildBasePath @@ "BuildTimeGeneration"
+
+    let targets =
+        [
+            @"BuildTimeGeneration\TypeProviders_CSharp_BuildTimeGeneration"
+            @"BuildTimeGeneration\TypeProviders_CSharp_BuildTimeGeneration_Attributes"
+        ]
+        |> String.concat ";"
+
+    let buildPath = buildBasePath @@ "msbuild"
+    MSBuildRelease buildPath targets [ slnPath ] |> ignore
+
+    let paketBasePath = buildBasePath @@ "paket"
+    let paketTemplateFilePath = paketBasePath @@ "paket.template"
+    let setPaketTemplateParams (p: PaketTemplateParams) =
+        {
+            p with 
+                TemplateFilePath = Some paketTemplateFilePath
+                TemplateType = File
+                Id = Some "TypeProviders.CSharp.BuildTimeGeneration"
+                Version = Some nuGetVersion
+                Authors = [ "Johannes Egger" ]
+                Description = [ projectDescription ]
+                DevelopmentDependency = Some true
+                LicenseUrl = Some (sprintf "https://github.com/eggapauli/TypeProviders.CSharp/blob/%s/LICENSE" commitId)
+                ProjectUrl = Some "https://github.com/eggapauli/TypeProviders.CSharp"
+                Dependencies =
+                    [
+                        "CodeGeneration.Roslyn.BuildTime", GreaterOrEqualSafe LOCKEDVERSION
+                    ]
+                Files =
+                    [
+                        Include ((buildPath @@ "ILRepack" @@ "*.*"), "tools")
+                        Include ((buildPath @@ "TypeProviders.CSharp.BuildTimeGeneration.Attributes.*"), "tools")
+                        Include ((repositoryBasePath @@ "NuGet" @@ "TypeProviders.CSharp.BuildTimeGeneration.props"), "build")
+                        Include ((buildPath @@ "TypeProviders.CSharp.BuildTimeGeneration.Attributes.*"), "lib/netstandard1.1")
+                    ]
+        }
+
+    directory paketTemplateFilePath |> ensureDirectory 
+    PaketTemplate setPaketTemplateParams
+
+    let setPaketPackParams (p: Paket.PaketPackParams) =
+        {
+            p with
+                ToolPath = repositoryBasePath @@ ".paket" @@ "paket.exe"
+                TemplateFile = paketTemplateFilePath
+                OutputPath = paketBasePath
+                Symbols = true
+        }
+    Paket.Pack setPaketPackParams
+
+Target "Default" <| fun () ->
+    printfn "Build succeeded. Output path: %s" buildBasePath
+
+"Default" <== [ "CreateCodeRefactoringProviderVsix"; "CreateBuildTimeGenerationNuGetPackage" ]
+"CreateCodeRefactoringProviderVsix" <== [ "TestCodeRefactoringProvider" ]
+"CreateBuildTimeGenerationNuGetPackage" <== [ "TestBuildTimeGeneration" ]
+"TestCodeRefactoringProvider" <== [ "TestCore"; "PatchCodeRefactoringProviderFiles" ]
+"TestBuildTimeGeneration" <== [ "TestCore"; "PatchBuildTimeGenerationFiles" ]
+"TestCore" <== [ "Clean" ]
+"PatchCodeRefactoringProviderFiles" <== [ "Clean" ]
+"PatchBuildTimeGenerationFiles" <== [ "Clean" ]
+
+RunTargetOrDefault "Default"

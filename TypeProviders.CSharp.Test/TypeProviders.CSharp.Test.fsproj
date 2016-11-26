@@ -60,6 +60,12 @@
         <__paket__xunit_runner_visualstudio_props>portable-net45+win8+wp8+wpa81\xunit.runner.visualstudio</__paket__xunit_runner_visualstudio_props>
       </PropertyGroup>
     </When>
+    <When Condition="$(TargetPlatformIdentifier) == 'UAP' And $(TargetPlatformVersion.StartsWith('10.0'))">
+      <PropertyGroup>
+        <__paket__xunit_runner_visualstudio_props>uap10.0\xunit.runner.visualstudio</__paket__xunit_runner_visualstudio_props>
+        <__paket__xunit_runner_visualstudio_targets>uap10.0\xunit.runner.visualstudio</__paket__xunit_runner_visualstudio_targets>
+      </PropertyGroup>
+    </When>
     <When Condition="$(TargetFrameworkIdentifier) == '.NETCore' And $(TargetFrameworkVersion) == 'v4.5.1'">
       <PropertyGroup>
         <__paket__xunit_runner_visualstudio_props>win81\xunit.runner.visualstudio</__paket__xunit_runner_visualstudio_props>

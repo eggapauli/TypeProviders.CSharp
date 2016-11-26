@@ -31,7 +31,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TypeProviders.CSharp.BuildT
 		{2BDCADD4-F563-4CD8-A404-576350C9471B} = {2BDCADD4-F563-4CD8-A404-576350C9471B}
 	EndProjectSection
 EndProject
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "TypeProviders.CSharp.BuildTimeGeneration.RunTime", "TypeProviders.CSharp.BuildTimeGeneration.RunTime\TypeProviders.CSharp.BuildTimeGeneration.RunTime.fsproj", "{3C2B99DE-440F-40C8-B14E-3772F80523B8}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TypeProviders.CSharp.BuildTimeGeneration.Attributes", "TypeProviders.CSharp.BuildTimeGeneration.Attributes\TypeProviders.CSharp.BuildTimeGeneration.Attributes.csproj", "{B556E241-5E28-4B6B-B2BD-730204E122CB}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -71,10 +71,10 @@ Global
 		{53377866-E9E9-4C06-83D3-76A3F6094328}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{53377866-E9E9-4C06-83D3-76A3F6094328}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{53377866-E9E9-4C06-83D3-76A3F6094328}.Release|Any CPU.Build.0 = Release|Any CPU
-		{3C2B99DE-440F-40C8-B14E-3772F80523B8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{3C2B99DE-440F-40C8-B14E-3772F80523B8}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{3C2B99DE-440F-40C8-B14E-3772F80523B8}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{3C2B99DE-440F-40C8-B14E-3772F80523B8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B556E241-5E28-4B6B-B2BD-730204E122CB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B556E241-5E28-4B6B-B2BD-730204E122CB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B556E241-5E28-4B6B-B2BD-730204E122CB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B556E241-5E28-4B6B-B2BD-730204E122CB}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -86,6 +86,6 @@ Global
 		{2BDCADD4-F563-4CD8-A404-576350C9471B} = {5835F588-BB64-4201-B53C-FEA9F4AC3CD9}
 		{63F0CF7A-8265-42B8-8744-4303BD826A82} = {547F7D3E-3997-44F2-BCD5-7AE0DDE13214}
 		{53377866-E9E9-4C06-83D3-76A3F6094328} = {5835F588-BB64-4201-B53C-FEA9F4AC3CD9}
-		{3C2B99DE-440F-40C8-B14E-3772F80523B8} = {5835F588-BB64-4201-B53C-FEA9F4AC3CD9}
+		{B556E241-5E28-4B6B-B2BD-730204E122CB} = {5835F588-BB64-4201-B53C-FEA9F4AC3CD9}
 	EndGlobalSection
 EndGlobal

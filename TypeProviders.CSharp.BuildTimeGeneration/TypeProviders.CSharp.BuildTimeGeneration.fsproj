@@ -57,13 +57,14 @@
   <!-- ILRepack -->
   <Target Name="AfterBuild">
     <ItemGroup>
-      <InputAssemblies Include="$(OutputPath)$(AssemblyName).dll" />
-      <InputAssemblies Include="$(OutputPath)FSharp.Core.dll" />
-      <InputAssemblies Include="$(OutputPath)FSharp.Data.DesignTime.dll" />
-      <InputAssemblies Include="$(OutputPath)TypeProviders.CSharp.dll" />
+      <OutputPathX Include="$(OutputPath)" />
+      <InputAssemblies Include="%(OutputPathX.FullPath)\$(AssemblyName).dll" />
+      <InputAssemblies Include="%(OutputPathX.FullPath)\FSharp.Core.dll" />
+      <InputAssemblies Include="%(OutputPathX.FullPath)\FSharp.Data.DesignTime.dll" />
+      <InputAssemblies Include="%(OutputPathX.FullPath)\TypeProviders.CSharp.dll" />
     </ItemGroup>
     <PropertyGroup>
-      <TargetPath>$(MSBuildProjectDirectory)\$(OutputPath)ILRepack\$(AssemblyName).dll</TargetPath>
+      <TargetPath>%(OutputPathX.FullPath)\ILRepack\$(AssemblyName).dll</TargetPath>
     </PropertyGroup>
     <Exec Command="$(SolutionDir)packages\ILRepack\tools\ILRepack.exe /lib:$(OutputPath) /parallel /internalize /out:$(TargetPath) @(InputAssemblies, ' ')" />
   </Target>

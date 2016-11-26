@@ -51,18 +51,18 @@
     </None>
     <None Include="paket.references" />
   </ItemGroup>
+  <PropertyGroup>
+    <GeneratorAssemblyBaseSearchPath Condition="$(GeneratorAssemblyBaseSearchPath)==''">..\TypeProviders.CSharp.BuildTimeGeneration\bin\$(Configuration)</GeneratorAssemblyBaseSearchPath>
+  </PropertyGroup>
   <ItemGroup>
-    <GeneratorAssemblySearchPaths Include="..\TypeProviders.CSharp.BuildTimeGeneration\bin\$(Configuration)\ILRepack">
-      <Visible>false</Visible>
-    </GeneratorAssemblySearchPaths>
-    <GeneratorAssemblySearchPaths Include="..\TypeProviders.CSharp.BuildTimeGeneration\bin\$(Configuration)">
+    <GeneratorAssemblySearchPaths Include="$(GeneratorAssemblyBaseSearchPath)\ILRepack;$(GeneratorAssemblyBaseSearchPath)">
       <Visible>false</Visible>
     </GeneratorAssemblySearchPaths>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\TypeProviders.CSharp.BuildTimeGeneration.RunTime\TypeProviders.CSharp.BuildTimeGeneration.RunTime.fsproj">
-      <Project>{3c2b99de-440f-40c8-b14e-3772f80523b8}</Project>
-      <Name>TypeProviders.CSharp.BuildTimeGeneration.RunTime</Name>
+    <ProjectReference Include="..\TypeProviders.CSharp.BuildTimeGeneration.Attributes\TypeProviders.CSharp.BuildTimeGeneration.Attributes.csproj">
+      <Project>{b556e241-5e28-4b6b-b2bd-730204e122cb}</Project>
+      <Name>TypeProviders.CSharp.BuildTimeGeneration.Attributes</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

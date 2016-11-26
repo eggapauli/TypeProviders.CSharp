@@ -344,3 +344,9 @@ NUGET
       xunit.extensibility.core (2.1) - framework: >= net45, dnx451, dnxcore50, monoandroid, monotouch, xamarinios, winv4.5, wpv8.0, wpav8.1
     xunit.runner.visualstudio (2.1.0) - version_in_path: true
     Zlib.Portable (1.11) - framework: >= netstandard11, portable-net45+sl5+win8, portable-net45+win8, portable-net45+win8+wp8+wpa81
+
+GROUP Build
+NUGET
+  remote: http://api.nuget.org/v3/index.json
+    FAKE (4.45.3)
+    xunit.runner.console (2.1)

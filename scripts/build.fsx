@@ -167,7 +167,7 @@ Target "CreateBuildTimeGenerationNuGetPackage" <| fun () ->
                 ToolPath = repositoryBasePath @@ ".paket" @@ "paket.exe"
                 TemplateFile = paketTemplateFilePath
                 OutputPath = artifactsPath
-                Symbols = true
+                //Symbols = true // doesn't work with `TemplateType = File`, but we don't really care about symbols for this package
         }
     Paket.Pack setPaketPackParams
 

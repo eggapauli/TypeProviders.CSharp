@@ -16,4 +16,5 @@ nuget xunit.runner.visualstudio version_in_path:true
 group Build
     source https://api.nuget.org/v3/index.json
     nuget FAKE
+    nuget GitVersion.CommandLine
     nuget xunit.runner.console

@@ -1,0 +1,31 @@
+init:
+    - git config --global core.autocrlf true
+
+install:
+    - cmd: .paket\paket.bootstrapper.exe
+
+before_build:
+    - cmd: .paket\paket.exe install
+
+build_script:
+    - cmd: packages\build\GitVersion.CommandLine\tools\GitVersion.exe /l console /updateassemblyinfo /exec "packages\build\FAKE\tools\FAKE.exe" /execArgs "scripts\build.fsx"
+
+test: off
+
+artifacts:
+  - path: artifacts\**\*.*
+
+deploy:
+  - provider: NuGet
+    api_key:
+        secure: W4LIy99ZYgP5/Ui81T8auRWPn0SNTPUH77+z7l/YFQ7e+OS48IxeX7zOiu913Req
+    skip_symbols: false
+    artifact: /.*\.nupkg/
+    on:
+        branch: master
+
+notifications:
+  - provider: Email
+    to:
+      - j.egger@posteo.at
+    on_build_status_changed: true

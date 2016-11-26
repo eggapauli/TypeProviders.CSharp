@@ -349,4 +349,5 @@ GROUP Build
 NUGET
   remote: http://api.nuget.org/v3/index.json
     FAKE (4.45.3)
+    GitVersion.CommandLine (3.6.5)
     xunit.runner.console (2.1)

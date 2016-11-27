@@ -53,7 +53,7 @@ Target "PatchBuildTimeGenerationFiles" <| fun () ->
         public const string AssemblyVersion = "%s";
     }
 }"""
-    System.IO.File.WriteAllText(globalsFile, globalsTemplate nuGetVersion)
+    System.IO.File.WriteAllText(globalsFile, globalsTemplate assemblyVersion)
 
 module Xml =
     open System.Xml

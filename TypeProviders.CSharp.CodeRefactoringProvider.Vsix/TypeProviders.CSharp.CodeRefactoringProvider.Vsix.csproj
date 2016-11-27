@@ -14,8 +14,8 @@
     <ProjectGuid>{076E32A3-CF29-4B09-87A3-3BD3B6D2C01A}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>TypeProviders.CSharp</RootNamespace>
-    <AssemblyName>TypeProviders.CSharp</AssemblyName>
+    <RootNamespace>TypeProviders.CSharp.CodeRefactoringProvider</RootNamespace>
+    <AssemblyName>TypeProviders.CSharp.CodeRefactoringProvider</AssemblyName>
     <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
     <GeneratePkgDefFile>false</GeneratePkgDefFile>
     <IncludeAssemblyInVSIXContainer>false</IncludeAssemblyInVSIXContainer>

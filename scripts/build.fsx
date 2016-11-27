@@ -9,6 +9,7 @@ open PaketTemplate
 
 let repositoryBasePath = __SOURCE_DIRECTORY__ @@ ".."
 let buildBasePath = repositoryBasePath @@ "build"
+let artifactsPath = repositoryBasePath @@ "artifacts"
 let toolsBaseDirectory = repositoryBasePath @@ "packages" @@ "build"
 
 let assemblyVersion = getBuildParam "GitVersion_AssemblySemVer"
@@ -18,7 +19,7 @@ let commitId = getBuildParam "GitVersion_Sha"
 let projectDescription = "Generate types out of untyped data (e.g. JSON)."
 
 Target "Clean" <| fun () ->
-    CleanDir buildBasePath
+    CleanDirs [ buildBasePath; artifactsPath ]
 
 let slnPath = FullName "TypeProviders.CSharp.sln"
 
@@ -112,6 +113,10 @@ Target "TestCodeRefactoringProvider" <| fun () ->
 Target "CreateCodeRefactoringProviderVsix" <| fun () ->
     let buildPath = buildBasePath @@ "CodeRefactoringProvider"
     MSBuildRelease buildPath "CodeRefactoringProvider\TypeProviders_CSharp_CodeRefactoringProvider_Vsix" [ slnPath ] |> ignore
+    !! "*.vsix"
+    |> SetBaseDir buildPath
+    |> Seq.exactlyOne
+    |> CopyFile artifactsPath
 
 Target "CreateBuildTimeGenerationNuGetPackage" <| fun () ->
     let buildBasePath = buildBasePath @@ "BuildTimeGeneration"
@@ -161,7 +166,7 @@ Target "CreateBuildTimeGenerationNuGetPackage" <| fun () ->
             p with
                 ToolPath = repositoryBasePath @@ ".paket" @@ "paket.exe"
                 TemplateFile = paketTemplateFilePath
-                OutputPath = paketBasePath
+                OutputPath = artifactsPath
                 Symbols = true
         }
     Paket.Pack setPaketPackParams

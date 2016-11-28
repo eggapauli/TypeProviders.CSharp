@@ -1,3 +1,5 @@
+skip_tags: true
+
 environment:
     access_token:
         secure: tK9azIJKQNkcoFHSVVGi1/89y67K8vR3iqX2w8EYjqf7peLj4cLPTcL3ypeUI18G

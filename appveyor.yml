@@ -1,3 +1,7 @@
+environment:
+    access_token:
+        secure: tK9azIJKQNkcoFHSVVGi1/89y67K8vR3iqX2w8EYjqf7peLj4cLPTcL3ypeUI18G
+
 init:
     - git config --global core.autocrlf true
 
@@ -24,8 +28,14 @@ deploy:
     on:
         branch: master
 
+on_success:
+    - git config --global credential.helper store
+    - ps: Add-Content "$env:USERPROFILE\.git-credentials" "https://$($env:access_token):x-oauth-basic@github.com`n"
+    - git tag %GitVersion_FullSemVer%
+    - git push origin %GitVersion_FullSemVer%
+
 notifications:
-  - provider: Email
-    to:
-      - j.egger@posteo.at
-    on_build_status_changed: true
+    - provider: Email
+      to:
+        - j.egger@posteo.at
+      on_build_status_changed: true

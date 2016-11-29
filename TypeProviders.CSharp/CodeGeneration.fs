@@ -16,6 +16,7 @@ let private parseMethodDeclarationSyntax =
         t.GetRoot().ChildNodes()
         |> Seq.exactlyOne
         :?> MethodDeclarationSyntax
+        |> fun node -> node.WithTrailingTrivia(SyntaxFactory.CarriageReturnLineFeed, SyntaxFactory.CarriageReturnLineFeed)
 
 let private indent i s =
     (String.replicate (4 * i) " ") + s
@@ -62,9 +63,13 @@ let getConstructor (typeName: string) properties =
         )
         .WithBody(SyntaxFactory.Block assignmentStatements)
 
-let getLoadFromUriMethod typeSyntax =
+let private loadFromWebMethodName = "LoadAsync"
+let private loadFromFileMethodName = "Load"
+let private parseMethodName = "Parse"
+
+let getLoadFromWebMethod typeSyntax =
     [
-        sprintf "public static async System.Threading.Tasks.Task<%O> LoadAsync(System.Uri uri)" typeSyntax
+        sprintf "public static async System.Threading.Tasks.Task<%O> %s(System.Uri uri)" typeSyntax loadFromWebMethodName
         "{"
         "    using (var client = new System.Net.Http.HttpClient())"
         "    {"
@@ -74,26 +79,118 @@ let getLoadFromUriMethod typeSyntax =
         "        var response = await client.SendAsync(request).ConfigureAwait(false);"
         "        response.EnsureSuccessStatusCode();"
         "        var data = await response.Content.ReadAsStringAsync().ConfigureAwait(false);"
-        "        return FromData(data);"
+        sprintf "        return %s(data);" parseMethodName
         "    }"
         "}"
     ]
     |> parseMethodDeclarationSyntax
 
+let getLoadFromFileMethod typeSyntax =
+    [
+        sprintf "public static %O %s(string filePath)" typeSyntax loadFromFileMethodName
+        "{"
+        "    var data = System.IO.File.ReadAllText(filePath);"
+        sprintf "    return %s(data);" parseMethodName
+        "}"
+    ]
+    |> parseMethodDeclarationSyntax
+
+let toUri str =
+    match Uri.TryCreate(str, UriKind.RelativeOrAbsolute) with
+    | true, uri -> Some uri
+    | _ -> None
+
+let private (|WebUri|_|) str =
+    let isWeb (uri: System.Uri) =
+        uri.IsAbsoluteUri && not uri.IsUnc && uri.Scheme <> "file"
+
+    match toUri str with
+    | Some uri when isWeb uri -> Some uri
+    | _ -> None
+
+let private (|FileInfo|_|) str =
+    let isValidFileName str =
+        let isValidPathChar ch =
+             System.IO.Path.GetInvalidPathChars()
+             |> Array.contains ch
+             |> not
+        str
+        |> Seq.forall isValidPathChar
+    match toUri str with
+    | Some _  when isValidFileName str -> System.IO.FileInfo str |> Some
+    | _ -> None
+
 let getGetSampleMethod returnType (sampleData: string) =
     //public static JsonProvider GetSample()
     //{
     //    var data = "...";
-    //    return FromData(data);
+    //    return Parse(data);
     //}
 
+    // OR:
+
+    //public static Task<JsonProvider> GetSampleAsync()
+    //{
+    //    var data = new Uri("...");
+    //    return LoadFromWebAsync(data);
+    //}
+
+    // OR:
+
+    //public static JsonProvider GetSample()
+    //{
+    //    var data = "...";
+    //    return LoadFromFile(data);
+    //}
+
+    let isWebUri, isFilePath, loadMethodName =
+        match sampleData with
+        | WebUri _ -> true, false, loadFromWebMethodName
+        | FileInfo _ -> false, true, loadFromFileMethodName
+        | _ -> false, false, parseMethodName
+
+    let isAsync = isWebUri
+
+    let returnType =
+        if isAsync
+        then
+            SyntaxFactory.GenericName(
+                SyntaxFactory.Identifier "System.Threading.Tasks.Task",
+                returnType |> SyntaxFactory.SingletonSeparatedList |> SyntaxFactory.TypeArgumentList
+            ) :> TypeSyntax
+        else returnType
+
+    let sampleDataExpression =
+        let stringLiteralExpression =
+            SyntaxFactory
+                .LiteralExpression(SyntaxKind.StringLiteralExpression)
+                .WithToken(SyntaxFactory.Literal sampleData)
+            :> ExpressionSyntax
+
+        if isWebUri
+        then
+            SyntaxFactory
+                .ObjectCreationExpression(
+                    SyntaxFactory.ParseTypeName "System.Uri"
+                )
+                .WithArgumentList(
+                    stringLiteralExpression
+                    |> SyntaxFactory.Argument
+                    |> SyntaxFactory.SingletonSeparatedList
+                    |> SyntaxFactory.ArgumentList
+                )
+                :> ExpressionSyntax
+        else stringLiteralExpression
+
     SyntaxFactory
-        .MethodDeclaration(returnType, "GetSample")
+        .MethodDeclaration(returnType, if isAsync then "GetSampleAsync" else "GetSample")
         .WithModifiers(
-            SyntaxFactory.TokenList(
-                SyntaxFactory.Token SyntaxKind.PublicKeyword,
-                SyntaxFactory.Token SyntaxKind.StaticKeyword
-            )
+            [
+                SyntaxKind.PublicKeyword
+                SyntaxKind.StaticKeyword
+            ]
+            |> List.map SyntaxFactory.Token
+            |> SyntaxFactory.TokenList
         )
         .WithBody(
             SyntaxFactory.Block(
@@ -105,31 +202,30 @@ let getGetSampleMethod returnType (sampleData: string) =
                                 SyntaxFactory
                                     .VariableDeclarator("data")
                                     .WithInitializer(
-                                        SyntaxFactory.EqualsValueClause(
-                                            SyntaxFactory
-                                                .LiteralExpression(SyntaxKind.StringLiteralExpression)
-                                                .WithToken(SyntaxFactory.Literal sampleData)
-                                        )
+                                        SyntaxFactory.EqualsValueClause sampleDataExpression
                                     )
                                 )
                             )
                 ),
-                SyntaxFactory.ReturnStatement(
-                    SyntaxFactory
-                        .InvocationExpression(SyntaxFactory.IdentifierName "FromData")
-                        .WithArgumentList(
-                            SyntaxFactory.IdentifierName "data"
-                            |> SyntaxFactory.Argument
-                            |> SyntaxFactory.SingletonSeparatedList
-                            |> SyntaxFactory.ArgumentList
-                        )
-                )
+                SyntaxFactory
+                    .ReturnStatement(
+                        SyntaxFactory
+                            .InvocationExpression(
+                                SyntaxFactory.IdentifierName loadMethodName
+                            )
+                            .WithArgumentList(
+                                SyntaxFactory.IdentifierName "data"
+                                |> SyntaxFactory.Argument
+                                |> SyntaxFactory.SingletonSeparatedList
+                                |> SyntaxFactory.ArgumentList
+                            )
+                    )
             )
        )
 
 let getFromStringMethod returnType =
     SyntaxFactory
-        .MethodDeclaration(returnType, "FromData")
+        .MethodDeclaration(returnType, parseMethodName)
         .WithModifiers(
             SyntaxFactory.TokenList(
                 SyntaxFactory.Token SyntaxKind.PublicKeyword,
@@ -176,9 +272,10 @@ let getFromStringMethod returnType =
 
 let getCreationMethods (rootTypeSyntax: TypeSyntax) sampleData =
     [
-        getLoadFromUriMethod rootTypeSyntax
-        getGetSampleMethod rootTypeSyntax sampleData
+        getLoadFromWebMethod rootTypeSyntax
+        getLoadFromFileMethod rootTypeSyntax
         getFromStringMethod rootTypeSyntax
+        getGetSampleMethod rootTypeSyntax sampleData
     ]
 
 let toSyntaxKind = function

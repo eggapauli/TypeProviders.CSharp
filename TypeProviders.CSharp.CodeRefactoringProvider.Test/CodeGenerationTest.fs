@@ -42,19 +42,25 @@ let creationMethods typeName indentationLevel sampleData =
         "        var response = await client.SendAsync(request).ConfigureAwait(false);"
         "        response.EnsureSuccessStatusCode();"
         "        var data = await response.Content.ReadAsStringAsync().ConfigureAwait(false);"
-        "        return FromData(data);"
+        "        return Parse(data);"
         "    }"
+        "}"
+        ""
+        sprintf "public static %s Load(string filePath)" typeName
+        "{"
+        "    var data = System.IO.File.ReadAllText(filePath);"
+        sprintf "    return Parse(data);"
+        "}"
+        ""
+        sprintf "public static %s Parse(string data)" typeName
+        "{"
+        sprintf "    return Newtonsoft.Json.JsonConvert.DeserializeObject<%s>(data);" typeName
         "}"
         ""
         sprintf "public static %s GetSample()" typeName
         "{"
         sprintf "    var data = \"%s\";" sampleData
-        "    return FromData(data);"
-        "}"
-        ""
-        sprintf "public static %s FromData(string data)" typeName
-        "{"
-        sprintf "    return Newtonsoft.Json.JsonConvert.DeserializeObject<%s>(data);" typeName
+        "    return Parse(data);"
         "}"
     ]
     |> indentLines indentationLevel

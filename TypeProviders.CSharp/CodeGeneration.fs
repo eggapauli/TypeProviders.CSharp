@@ -55,15 +55,6 @@ let getConstructor (typeName: string) properties =
             |> SyntaxFactory.Token
             |> SyntaxFactory.TokenList
         )
-        .WithAttributeLists(
-            [
-                SyntaxFactory.ParseName "Newtonsoft.Json.JsonConstructor"
-                |> SyntaxFactory.Attribute
-                |> SyntaxFactory.SingletonSeparatedList
-                |> SyntaxFactory.AttributeList
-            ]
-            |> SyntaxFactory.List
-        )
         .WithParameterList(
             parameters
             |> SyntaxFactory.SeparatedList

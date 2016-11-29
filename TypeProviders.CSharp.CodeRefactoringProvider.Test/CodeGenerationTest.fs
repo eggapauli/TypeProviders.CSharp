@@ -213,7 +213,6 @@ class TestProvider
         public NestedObject NestedObject { get; }
         public System.Collections.Generic.IReadOnlyList<CollidingName_> CollidingNames { get; }
 
-        [Newtonsoft.Json.JsonConstructor]
         private Root(int intValue, System.DateTime dateTimeValue, System.Collections.Generic.IReadOnlyList<int> simpleArray, System.Collections.Generic.IReadOnlyList<System.Collections.Generic.IReadOnlyList<int>> simpleArrayOfArray, NestedObject nestedObject, System.Collections.Generic.IReadOnlyList<CollidingName_> collidingNames)
         {
             IntValue = intValue;
@@ -229,7 +228,6 @@ class TestProvider
     {
         public A A { get; }
 
-        [Newtonsoft.Json.JsonConstructor]
         private NestedObject(A a)
         {
             A = a;
@@ -240,7 +238,6 @@ class TestProvider
     {
         public string B { get; }
 
-        [Newtonsoft.Json.JsonConstructor]
         private A(string b)
         {
             B = b;
@@ -251,7 +248,6 @@ class TestProvider
     {
         public string CollidingName { get; }
 
-        [Newtonsoft.Json.JsonConstructor]
         private CollidingName_(string collidingName)
         {
             CollidingName = collidingName;

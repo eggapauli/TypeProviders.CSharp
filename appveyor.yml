@@ -37,7 +37,7 @@ on_success:
             git config --global credential.helper store
             Add-Content "$env:USERPROFILE\.git-credentials" "https://$($env:github_access_token):x-oauth-basic@github.com`n"
             git tag $env:GitVersion_FullSemVer
-            git push origin $env:GitVersion_FullSemVer
+            git push origin $env:GitVersion_FullSemVer -q
         }
         else
         {

@@ -24,13 +24,21 @@ let private indent i s =
 let private firstToLower (s: string) =
     System.Char.ToLower(s.[0]).ToString() + s.Substring 1
 
+let private ensureIsValidIdentifier identifier =
+    if SyntaxFacts.GetKeywordKind identifier = SyntaxKind.None
+        && SyntaxFacts.GetContextualKeywordKind identifier = SyntaxKind.None
+    then identifier
+    else sprintf "@%s" identifier
+
 let getConstructor (typeName: string) properties =
+    let variableNameForProperty = firstToLower >> ensureIsValidIdentifier
+
     let parameters =
         properties
         |> List.map (fun (name, propertyType) ->
             SyntaxFactory
                 .Parameter(
-                    firstToLower name
+                    variableNameForProperty name
                     |> SyntaxFactory.Identifier
                 )
                 .WithType(propertyType)
@@ -43,7 +51,7 @@ let getConstructor (typeName: string) properties =
                 SyntaxFactory.AssignmentExpression(
                     SyntaxKind.SimpleAssignmentExpression,
                     SyntaxFactory.IdentifierName name,
-                    SyntaxFactory.IdentifierName(firstToLower name)
+                    SyntaxFactory.IdentifierName(variableNameForProperty name)
                 )
             )
             :> StatementSyntax

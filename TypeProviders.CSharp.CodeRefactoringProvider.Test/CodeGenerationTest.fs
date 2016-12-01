@@ -196,7 +196,8 @@ let ``Should refactor according to complex object``() =
     \"CollidingNames\": [
         { \"CollidingName\": \"asd\" },
         { \"CollidingName\": \"qwe\" }
-    ]
+    ],
+    \"Private\": true
 }"""
     let minifiedJson = System.Text.RegularExpressions.Regex.Replace(json, "\r\n\s*", "")
     let attribute = sprintf """[TypeProviders.CSharp.JsonProvider("%s")]""" minifiedJson
@@ -218,8 +219,9 @@ class TestProvider
         public System.Collections.Generic.IReadOnlyList<System.Collections.Generic.IReadOnlyList<int>> SimpleArrayOfArray { get; }
         public NestedObject NestedObject { get; }
         public System.Collections.Generic.IReadOnlyList<CollidingName_> CollidingNames { get; }
+        public bool Private { get; }
 
-        public Root(int intValue, System.DateTime dateTimeValue, System.Collections.Generic.IReadOnlyList<int> simpleArray, System.Collections.Generic.IReadOnlyList<System.Collections.Generic.IReadOnlyList<int>> simpleArrayOfArray, NestedObject nestedObject, System.Collections.Generic.IReadOnlyList<CollidingName_> collidingNames)
+        public Root(int intValue, System.DateTime dateTimeValue, System.Collections.Generic.IReadOnlyList<int> simpleArray, System.Collections.Generic.IReadOnlyList<System.Collections.Generic.IReadOnlyList<int>> simpleArrayOfArray, NestedObject nestedObject, System.Collections.Generic.IReadOnlyList<CollidingName_> collidingNames, bool @private)
         {
             IntValue = intValue;
             DateTimeValue = dateTimeValue;
@@ -227,6 +229,7 @@ class TestProvider
             SimpleArrayOfArray = simpleArrayOfArray;
             NestedObject = nestedObject;
             CollidingNames = collidingNames;
+            Private = @private;
         }
     }
 

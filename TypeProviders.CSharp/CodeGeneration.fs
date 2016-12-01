@@ -52,7 +52,7 @@ let getConstructor (typeName: string) properties =
     SyntaxFactory
         .ConstructorDeclaration(typeName)
         .WithModifiers(
-            SyntaxKind.PrivateKeyword
+            SyntaxKind.PublicKeyword
             |> SyntaxFactory.Token
             |> SyntaxFactory.TokenList
         )

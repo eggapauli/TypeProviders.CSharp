@@ -37,7 +37,7 @@ Generate C# types out of untyped data.
         <Generator>MSBuild:GenerateCodeFromAttributes</Generator>
       </Compile>
       ```
-* Run code generation by either building the project or by right-clicking on Repository.cs in Visual Studio and selecting `Run Custom Tool`
+* Run code generation either by building the project or by right-clicking on Repository.cs in Visual Studio and selecting `Run Custom Tool`
 * Done. The following image shows the structure of the final Repository class.
 
   ![Structure of generated class](docs/assets/generated-file-structure.png)

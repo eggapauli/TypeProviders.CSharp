@@ -1,4 +1,4 @@
-﻿module TypeProviders.CSharp.Test.TypeProviderParser
+﻿module TypeProviders.CSharp.Test.JsonProviderParser
 
 open Swensen.Unquote
 open Xunit

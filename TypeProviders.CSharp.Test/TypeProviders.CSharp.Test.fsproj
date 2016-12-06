@@ -108,7 +108,7 @@
   <ItemGroup>
     <None Include="paket.references" />
     <Compile Include="AssemblyInfo.fs" />
-    <Compile Include="TypeProviderParserTests.fs" />
+    <Compile Include="JsonProviderParserTests.fs" />
     <Compile Include="DataTypeUpdateTests.fs" />
     <Content Include="App.config" />
   </ItemGroup>

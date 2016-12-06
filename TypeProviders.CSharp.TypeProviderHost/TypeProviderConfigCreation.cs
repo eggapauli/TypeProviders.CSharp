@@ -48,8 +48,16 @@ namespace TypeProviders.CSharp
 
         public static TypeProviderConfig CreateConfig(Assembly runtimeAssembly, IEnumerable<Assembly> additionalAssemblies)
         {
-            var assemblies = AppDomain.CurrentDomain.GetAssemblies()
-                .Where(asm => !asm.IsDynamic)
+            var referencedAssemblies = runtimeAssembly.GetReferencedAssemblies();
+            var requiredAssemblies = new[] { "mscorlib", "FSharp.Core", "FSharp.Data.DesignTime" }
+                .Select(requiredAssemblyName =>
+                {
+                    var assemblyName = referencedAssemblies.Single(asm => asm.Name == requiredAssemblyName);
+                    return Assembly.Load(assemblyName);
+                });
+
+            var assemblies = new[] { runtimeAssembly }
+                .Concat(requiredAssemblies)
                 .Concat(additionalAssemblies)
                 .Select(asm => new ImportedBinaryMock(asm.Location));
             var @base = new TcImportsMock(new ImportedBinaryMock[0], Microsoft.FSharp.Core.FSharpOption<TcImportsMock>.None);

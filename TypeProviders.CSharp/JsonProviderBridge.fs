@@ -52,4 +52,16 @@ module JsonProviderBridge =
 
         let rootType = createParametricRootType provider args
 
-        TypeProviderParser.parseDataType rootType
+        let getTypeMembers (ty: Type) =
+            [
+                yield! ty.GetProperties() |> Seq.cast<MemberInfo>
+                yield! ty.GetNestedTypes() |> Seq.cast<MemberInfo>
+            ]
+            |> List.filter (function
+                | :? PropertyInfo as p when p.PropertyType.FullName = typeof<FSharp.Data.JsonValue>.FullName -> false
+                | :? PropertyInfo as p -> true
+                | :? Type -> true
+                | _ -> false
+            )
+
+        TypeProviderParser.parseDataType getTypeMembers rootType

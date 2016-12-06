@@ -20,13 +20,13 @@ namespace TypeProviders.CSharp
 
         private class TcImportsMock
         {
-            private IEnumerable<ImportedBinaryMock> dllInfos;
+            private IReadOnlyCollection<ImportedBinaryMock> dllInfos;
 
             public Microsoft.FSharp.Core.FSharpOption<TcImportsMock> Base { get; }
 
             public TcImportsMock(IEnumerable<ImportedBinaryMock> dllInfos, Microsoft.FSharp.Core.FSharpOption<TcImportsMock> @base)
             {
-                this.dllInfos = dllInfos;
+                this.dllInfos = dllInfos.ToList();
                 Base = @base;
             }
         }
@@ -52,7 +52,12 @@ namespace TypeProviders.CSharp
             var requiredAssemblies = new[] { "mscorlib", "FSharp.Core", "FSharp.Data.DesignTime" }
                 .Select(requiredAssemblyName =>
                 {
-                    var assemblyName = referencedAssemblies.Single(asm => asm.Name == requiredAssemblyName);
+                    var assemblyName = referencedAssemblies
+                        .FirstOrDefault(asm => asm.Name == requiredAssemblyName);
+                    if (assemblyName == null)
+                    {
+                        throw new Exception($"Couldn't find assembly {requiredAssemblyName} in referenced assemblies {referencedAssemblies.Select(a => a.Name)}");
+                    }
                     return Assembly.Load(assemblyName);
                 });
 

@@ -59,6 +59,7 @@
     <ItemGroup>
       <OutputPathX Include="$(OutputPath)" />
       <InputAssemblies Include="%(OutputPathX.FullPath)\$(AssemblyName).dll" />
+      <InputAssemblies Include="%(OutputPathX.FullPath)\TypeProviders.CSharp.TypeProviderHost.dll" />
       <InputAssemblies Include="%(OutputPathX.FullPath)\FSharp.Core.dll" />
       <InputAssemblies Include="%(OutputPathX.FullPath)\FSharp.Data.DesignTime.dll" />
       <InputAssemblies Include="%(OutputPathX.FullPath)\TypeProviders.CSharp.dll" />

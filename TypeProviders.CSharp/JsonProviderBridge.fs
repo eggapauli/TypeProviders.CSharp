@@ -16,45 +16,16 @@ module JsonProviderArgs =
 
 module JsonProviderBridge =
     open System
-    open ProviderImplementation.ProvidedTypes
-    open Microsoft.FSharp.Core.CompilerServices
     open System.Reflection
+    open ProviderImplementation.ProvidedTypes
 
-    type private ImportedBinaryMock(fileName) =
-        member val FileName = fileName with get
-
-    type private TcImportsMock
-        (
-            referencedDlls: ImportedBinaryMock list,
-            tcImportsBase: TcImportsMock option
-        ) =
-        let dllInfos = referencedDlls
-        member x.SystemRuntimeContainsType s =
-             Type.GetType(s).Assembly.Equals typeof<System.Object>.Assembly.FullName
-
-        member x.PrintDllInfos() =
-             dllInfos
-             |> Seq.iter (printfn "%O")
-
-        member val Base = tcImportsBase
-
-    let createJsonProvider() =
-        let systemRuntimeContainsType =
-            let dlls =
-                AppDomain.CurrentDomain.GetAssemblies()
-                |> Seq.filter (fun asm -> not asm.IsDynamic)
-                |> Seq.map (fun asm -> ImportedBinaryMock asm.Location)
-                |> Seq.toList
-            let tcImports = TcImportsMock(dlls, TcImportsMock([], None) |> Some)
-            fun t -> tcImports.SystemRuntimeContainsType t
-
-        let cfg =
-            TypeProviderConfig(
-                systemRuntimeContainsType,
-                RuntimeAssembly = Assembly.GetExecutingAssembly().FullName
+    let createProvider() =
+        new JsonProvider(
+            TypeProviderHost.CreateConfig(
+                Assembly.GetExecutingAssembly(),
+                []
             )
-
-        new JsonProvider(cfg)
+        )
 
     let createParametricRootType (typeProvider: TypeProviderForNamespaces) (args: JsonProviderArgs) =
         let rootType =
@@ -77,7 +48,7 @@ module JsonProviderBridge =
         rootType.MakeParametricType("root", providerArgsArray)
 
     let parseDataType args =
-        use provider = createJsonProvider()
+        use provider = createProvider()
 
         let rootType = createParametricRootType provider args
 

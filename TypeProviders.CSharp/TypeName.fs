@@ -47,7 +47,7 @@ module TypeName =
                 if elementType.IsValueType
                 then Optional elementTypeName
                 else elementTypeName
-            elif t.IsNested then Common t.Name // TODO works only for our types, not for existing ones
+            elif t.IsNested then Generated t.Name // TODO not always true, but works for now
             elif t.FullName = typeof<FSharp.Data.Runtime.BaseTypes.IJsonDocument>.FullName
             then Predefined TObject
-            else Common t.FullName
+            else Existing t.FullName

@@ -64,9 +64,11 @@
     <Compile Include="TypeName.fs" />
     <Compile Include="TypeProviderParser.fs" />
     <Compile Include="JsonProviderBridge.fs" />
+    <Compile Include="XmlProviderBridge.fs" />
     <Compile Include="DataTypeUpdate.fs" />
     <Compile Include="CodeGeneration.fs" />
     <Compile Include="JsonCodeGeneration.fs" />
+    <Compile Include="XmlCodeGeneration.fs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="FSharp.Data.DesignTime">

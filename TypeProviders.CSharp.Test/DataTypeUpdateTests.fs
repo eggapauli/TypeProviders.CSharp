@@ -7,15 +7,15 @@ open TypeProviders.CSharp
 [<Fact>]
 let ``Should not change anything when names dont collide``() =
     let input = {
-        ReturnTypeFromParsingData = Common "Root" |> Collection
+        ReturnTypeFromParsingData = Generated "Root" |> Collection
         Members =
         [
             SubType
                 (
                     "Root",
                     [
-                        Property ("Values", Common "Value" |> Collection)
-                        Property ("Time", Common "System.DateTime")
+                        Property ("Values", Generated "Value" |> Collection)
+                        Property ("Time", Existing "System.DateTime")
                     ]
                 )
             SubType
@@ -34,14 +34,14 @@ let ``Should not change anything when names dont collide``() =
 let ``Should change type name when names collide``() =
     let actual =
         {
-            ReturnTypeFromParsingData = Common "Root" |> Collection
+            ReturnTypeFromParsingData = Generated "Root" |> Collection
             Members =
             [
                 SubType
                     (
                         "Root",
                         [
-                            Property ("Values", Common "Value" |> Collection)
+                            Property ("Values", Generated "Value" |> Collection)
                         ]
                     )
                 SubType
@@ -56,14 +56,14 @@ let ``Should change type name when names collide``() =
         |> DataTypeUpdate.CSharp.ensureTypeHasNoPropertyWithSameName
 
     let expected = {
-        ReturnTypeFromParsingData = Common "Root" |> Collection
+        ReturnTypeFromParsingData = Generated "Root" |> Collection
         Members =
         [
             SubType
                 (
                     "Root",
                     [
-                        Property ("Values", Common "Value_" |> Collection)
+                        Property ("Values", Generated "Value_" |> Collection)
                     ]
                 )
             SubType

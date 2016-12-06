@@ -10,8 +10,8 @@ let propertyTypeTestData: obj array array = [|
     //[| "5.123"; Predefined TDouble |] // FSharp.Data parses it as decimal
     [| "5.123"; Predefined TDecimal |]
     [| "true"; Predefined TBool |]
-    [| "\"2009-06-15T13:45:30Z\""; Common "System.DateTime" |]
-    [| "\"7E22EDE9-6D0F-48C2-A280-B36DC859435D\""; Common "System.Guid" |]
+    [| "\"2009-06-15T13:45:30Z\""; Existing "System.DateTime" |]
+    [| "\"7E22EDE9-6D0F-48C2-A280-B36DC859435D\""; Existing "System.Guid" |]
     //[| "\"05:04:03\""; Common "System.TimeSpan" |] // No support in FSharp.Data
     //[| "\"http://example.com/path?query#hash\""; Common "System.Uri" |] // No support in FSharp.Data
 |]
@@ -25,7 +25,7 @@ let ``Should parse correct property type``(value, expectedType) =
         |> JsonProviderBridge.parseDataType
 
     let expected = {
-        ReturnTypeFromParsingData = Common "Root"
+        ReturnTypeFromParsingData = Generated "Root"
         Members =
         [
             SubType
@@ -46,7 +46,7 @@ let ``Should work with multiple object properties``() =
         |> JsonProviderBridge.parseDataType
 
     let expected = {
-        ReturnTypeFromParsingData = Common "Root"
+        ReturnTypeFromParsingData = Generated "Root"
         Members =
         [
             SubType
@@ -68,14 +68,14 @@ let ``Should refactor according to sample data with nested object``() =
         |> JsonProviderBridge.parseDataType
 
     let expected = {
-        ReturnTypeFromParsingData = Common "Root"
+        ReturnTypeFromParsingData = Generated "Root"
         Members =
         [
             SubType
                 (
                     "Root",
                     [
-                        Property ("Obj", Common "Obj")
+                        Property ("Obj", Generated "Obj")
                     ]
                 )
             SubType
@@ -96,7 +96,7 @@ let ``Should refactor according to sample data with simple array``() =
         |> JsonProviderBridge.parseDataType
 
     let expected = {
-        ReturnTypeFromParsingData = Common "Root"
+        ReturnTypeFromParsingData = Generated "Root"
         Members =
         [
             SubType
@@ -117,14 +117,14 @@ let ``Should refactor according to sample data with array of objects``() =
         |> JsonProviderBridge.parseDataType
 
     let expected = {
-        ReturnTypeFromParsingData = Common "Root"
+        ReturnTypeFromParsingData = Generated "Root"
         Members =
         [
             SubType
                 (
                     "Root",
                     [
-                        Property ("Values", Common "Value" |> Collection)
+                        Property ("Values", Generated "Value" |> Collection)
                     ]
                 )
             SubType
@@ -145,7 +145,7 @@ let ``Should refactor according to sample data with array of simple array``() =
         |> JsonProviderBridge.parseDataType
 
     let expected = {
-        ReturnTypeFromParsingData = Common "Root"
+        ReturnTypeFromParsingData = Generated "Root"
         Members =
         [
             SubType
@@ -166,14 +166,14 @@ let ``Should refactor according to sample data with array of array of object``()
         |> JsonProviderBridge.parseDataType
 
     let expected = {
-        ReturnTypeFromParsingData = Common "Root"
+        ReturnTypeFromParsingData = Generated "Root"
         Members =
         [
             SubType
                 (
                     "Root",
                     [
-                        Property ("Values", Common "Value" |> Collection |> Collection)
+                        Property ("Values", Generated "Value" |> Collection |> Collection)
                     ]
                 )
             SubType
@@ -206,7 +206,7 @@ let ``Should refactor according to object array``() =
         |> JsonProviderBridge.parseDataType
 
     let expected = {
-        ReturnTypeFromParsingData = Common "Root" |> Collection
+        ReturnTypeFromParsingData = Generated "Root" |> Collection
         Members =
         [
             SubType
@@ -227,7 +227,7 @@ let ``Should create combined type for all array elements``() =
         |> JsonProviderBridge.parseDataType
 
     let expected = {
-        ReturnTypeFromParsingData = Common "Root" |> Collection
+        ReturnTypeFromParsingData = Generated "Root" |> Collection
         Members =
         [
             SubType
@@ -249,7 +249,7 @@ let ``Should use object when type is unknown``() =
         |> JsonProviderBridge.parseDataType
 
     let expected = {
-        ReturnTypeFromParsingData = Common "Root" |> Collection
+        ReturnTypeFromParsingData = Generated "Root" |> Collection
         Members =
         [
             SubType

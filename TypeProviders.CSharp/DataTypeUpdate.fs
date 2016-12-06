@@ -35,7 +35,8 @@ module CSharp =
             |> Option.ifNone name
 
         let rec updatePropertyType = function
-            | Common name -> getNewName name |> Common
+            | Existing name -> getNewName name |> Existing
+            | Generated name -> getNewName name |> Generated
             | Collection t -> updatePropertyType t |> Collection
             | Optional t -> updatePropertyType t |> Optional
             | Predefined t -> Predefined t

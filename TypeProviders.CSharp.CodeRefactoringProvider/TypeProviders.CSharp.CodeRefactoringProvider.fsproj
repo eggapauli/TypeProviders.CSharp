@@ -54,6 +54,7 @@
     <Compile Include="AssemblyInfo.fs" />
     <Compile Include="CodeRefactoringProviderHelper.fs" />
     <Compile Include="JsonProviderCodeRefactoringProvider.fs" />
+    <Compile Include="XmlProviderCodeRefactoringProvider.fs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="FSharp.Data.DesignTime">

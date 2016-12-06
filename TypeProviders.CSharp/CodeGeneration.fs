@@ -15,6 +15,16 @@ module SF =
         |> SyntaxFactory.Token
         |> SyntaxFactory.PredefinedType
 
+    let interpolatedStringText content =
+        SyntaxFactory.Token(
+            SyntaxFactory.TriviaList(),
+            SyntaxKind.InterpolatedStringTextToken,
+            content,
+            content,
+            SyntaxFactory.TriviaList()
+        )
+        |> SyntaxFactory.InterpolatedStringText
+
     let objectCreation (arguments: ArgumentSyntax list) typeSyntax =
         SyntaxFactory
             .ObjectCreationExpression(typeSyntax)
@@ -81,9 +91,12 @@ module SF =
         |> List.map SyntaxFactory.Token
         |> SyntaxFactory.TokenList
 
-    let parameter name parameterType =
+    let parameterWithoutType name =
         SyntaxFactory
             .Parameter(SyntaxFactory.Identifier name)
+
+    let parameter name parameterType =
+        (parameterWithoutType name)
             .WithType(parameterType)
 
     let singletonParameter =
@@ -127,7 +140,8 @@ let toSyntaxKind = function
     | TString -> SyntaxKind.StringKeyword
 
 let rec getTypeSyntax = function
-    | Common s -> SyntaxFactory.ParseTypeName s
+    | Existing s
+    | Generated s -> SyntaxFactory.ParseTypeName s
     | Collection s ->
         [
             SyntaxFactory.IdentifierName "System" :> SimpleNameSyntax

@@ -75,6 +75,7 @@
     <None Include="paket.references" />
     <Compile Include="CodeGenerationBridge.fs" />
     <Compile Include="JsonProviderGenerator.fs" />
+    <Compile Include="XmlProviderGenerator.fs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="FSharp.Data.DesignTime">

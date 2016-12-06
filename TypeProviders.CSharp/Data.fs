@@ -23,7 +23,8 @@ type PredefinedCSharpType =
     | TString
 
 type TypeName =
-    | Common of string
+    | Generated of string
+    | Existing of string
     | Collection of TypeName
     | Predefined of PredefinedCSharpType
     | Optional of TypeName

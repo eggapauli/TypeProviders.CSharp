@@ -32,6 +32,16 @@ let indentLines indentationLevel lines =
 
 let creationMethods typeName indentationLevel sampleData =
     [
+        sprintf "public static %s Parse(System.IO.Stream dataStream)" typeName
+        "{"
+        "    using (var textReader = new System.IO.StreamReader(dataStream))"
+        "    using (var jsonTextReader = new Newtonsoft.Json.JsonTextReader(textReader))"
+        "    {"
+        "        var serializer = new Newtonsoft.Json.JsonSerializer();"
+        sprintf "        return serializer.Deserialize<%s>(jsonTextReader);" typeName
+        "    }"
+        "}"
+        ""
         sprintf "public static async System.Threading.Tasks.Task<%s> LoadAsync(System.Uri uri)" typeName
         "{"
         "    using (var client = new System.Net.Http.HttpClient())"
@@ -41,8 +51,8 @@ let creationMethods typeName indentationLevel sampleData =
         "        request.Headers.UserAgent.Add(new System.Net.Http.Headers.ProductInfoHeaderValue(\"TypeProviders.CSharp\", \"0.0.1\"));"
         "        var response = await client.SendAsync(request).ConfigureAwait(false);"
         "        response.EnsureSuccessStatusCode();"
-        "        var data = await response.Content.ReadAsStringAsync().ConfigureAwait(false);"
-        "        return Parse(data);"
+        "        var dataStream = await response.Content.ReadAsStreamAsync().ConfigureAwait(false);"
+        "        return Parse(dataStream);"
         "    }"
         "}"
         ""
@@ -54,13 +64,15 @@ let creationMethods typeName indentationLevel sampleData =
         ""
         sprintf "public static %s Parse(string data)" typeName
         "{"
-        sprintf "    return Newtonsoft.Json.JsonConvert.DeserializeObject<%s>(data);" typeName
+        "    var dataBytes = System.Text.Encoding.Default.GetBytes(data);"
+        "    using (var dataStream = new System.IO.MemoryStream(dataBytes))"
+        "        return Parse(dataStream);"
         "}"
         ""
         sprintf "public static %s GetSample()" typeName
         "{"
-        sprintf "    var data = \"%s\";" sampleData
-        "    return Parse(data);"
+        sprintf "    var sampleData = \"%s\";" sampleData
+        "    return Parse(sampleData);"
         "}"
     ]
     |> indentLines indentationLevel

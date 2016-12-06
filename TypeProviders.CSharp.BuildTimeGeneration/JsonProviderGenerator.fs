@@ -71,7 +71,7 @@ type JsonProviderGenerator(attributeData: AttributeData) =
                    
                        [
                            yield! CodeGeneration.generateDataStructure dataType
-                           yield! CodeGeneration.generateCreationMethods dataType sampleData
+                           yield! JsonCodeGeneration.generateCreationMethods dataType sampleData
                        ]
                    with e ->
                        GeneralError ("Error while generating code", e.Message)

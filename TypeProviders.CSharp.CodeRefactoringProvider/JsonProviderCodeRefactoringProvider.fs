@@ -46,7 +46,7 @@ type JsonProviderCodeRefactoringProvider() =
 
                 let members = [
                     yield! CodeGeneration.generateDataStructure dataType
-                    yield! CodeGeneration.generateCreationMethods dataType sampleData
+                    yield! JsonCodeGeneration.generateCreationMethods dataType sampleData
                 ]
 
                 let newTypeDecl =

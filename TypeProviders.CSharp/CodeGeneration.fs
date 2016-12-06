@@ -9,17 +9,77 @@ open System.Reflection
 open FSharp.Data
 open TypeProviders.CSharp
 
-let private parseMethodDeclarationSyntax =
-    String.concat Environment.NewLine
-    >> SyntaxFactory.ParseSyntaxTree
-    >> fun t ->
-        t.GetRoot().ChildNodes()
-        |> Seq.exactlyOne
-        :?> MethodDeclarationSyntax
-        |> fun node -> node.WithTrailingTrivia(SyntaxFactory.CarriageReturnLineFeed, SyntaxFactory.CarriageReturnLineFeed)
+module SF =
+    let objectCreation typeSyntax (arguments: ArgumentSyntax list) =
+        SyntaxFactory
+            .ObjectCreationExpression(typeSyntax)
+            .WithArgumentList(
+                arguments
+                |> SyntaxFactory.SeparatedList
+                |> SyntaxFactory.ArgumentList
+            )
 
-let private indent i s =
-    (String.replicate (4 * i) " ") + s
+    let variableDeclaration (variableName: string) initializerExpression =
+        SyntaxFactory
+            .VariableDeclaration(
+                SyntaxFactory.IdentifierName "var"
+            )
+            .WithVariables(
+                SyntaxFactory
+                    .VariableDeclarator(variableName)
+                    .WithInitializer(
+                        SyntaxFactory
+                            .EqualsValueClause(
+                                initializerExpression
+                            )
+                    )
+                |> SyntaxFactory.SingletonSeparatedList
+            )
+
+    let genericName (name: string) (genericArguments: TypeSyntax list) =
+        SyntaxFactory
+            .GenericName(name)
+            .WithTypeArgumentList(
+                genericArguments
+                |> SyntaxFactory.SeparatedList
+                |> SyntaxFactory.TypeArgumentList
+            )
+
+    let qualifiedTypeName (parts: SimpleNameSyntax list) =
+        let rec impl acc p =
+            match p with
+            | [] -> acc
+            | head :: tail ->
+                let newAcc =
+                    match acc with
+                    | Some x -> SyntaxFactory.QualifiedName(x, head) :> NameSyntax |> Some
+                    | None -> head :> NameSyntax |> Some
+                impl newAcc tail
+        parts
+        |> impl None
+        |> Option.ifNone (SyntaxFactory.IdentifierName "" :> NameSyntax)
+
+    let simpleMemberAccess name expression = 
+        SyntaxFactory
+            .MemberAccessExpression(
+                SyntaxKind.SimpleMemberAccessExpression,
+                expression,
+                name
+            )
+
+    let methodInvocation memberAccess (arguments: ArgumentSyntax list) =
+        SyntaxFactory
+            .InvocationExpression(memberAccess)
+            .WithArgumentList(
+                arguments
+                |> SyntaxFactory.SeparatedList
+                |> SyntaxFactory.ArgumentList
+            )
+
+    let getKeywordTokenList keywords =
+        keywords
+        |> List.map SyntaxFactory.Token
+        |> SyntaxFactory.TokenList
 
 let private firstToLower (s: string) =
     System.Char.ToLower(s.[0]).ToString() + s.Substring 1
@@ -59,11 +119,7 @@ let getConstructor (typeName: string) properties =
 
     SyntaxFactory
         .ConstructorDeclaration(typeName)
-        .WithModifiers(
-            SyntaxKind.PublicKeyword
-            |> SyntaxFactory.Token
-            |> SyntaxFactory.TokenList
-        )
+        .WithModifiers(SF.getKeywordTokenList [ SyntaxKind.PublicKeyword ])
         .WithParameterList(
             parameters
             |> SyntaxFactory.SeparatedList
@@ -75,33 +131,212 @@ let private loadFromWebMethodName = "LoadAsync"
 let private loadFromFileMethodName = "Load"
 let private parseMethodName = "Parse"
 
-let getLoadFromWebMethod typeSyntax =
-    [
-        sprintf "public static async System.Threading.Tasks.Task<%O> %s(System.Uri uri)" typeSyntax loadFromWebMethodName
-        "{"
-        "    using (var client = new System.Net.Http.HttpClient())"
-        "    {"
-        "        var request = new System.Net.Http.HttpRequestMessage(System.Net.Http.HttpMethod.Get, uri);"
-        "        request.Headers.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue(\"application/json\"));"
-        "        request.Headers.UserAgent.Add(new System.Net.Http.Headers.ProductInfoHeaderValue(\"TypeProviders.CSharp\", \"0.0.1\"));"
-        "        var response = await client.SendAsync(request).ConfigureAwait(false);"
-        "        response.EnsureSuccessStatusCode();"
-        "        var data = await response.Content.ReadAsStringAsync().ConfigureAwait(false);"
-        sprintf "        return %s(data);" parseMethodName
-        "    }"
-        "}"
-    ]
-    |> parseMethodDeclarationSyntax
+let getLoadFromWebMethod typeSyntax (mimeType: string) =
+    let returnType =
+        [
+            SyntaxFactory.IdentifierName "System" :> SimpleNameSyntax
+            SyntaxFactory.IdentifierName "Threading" :> SimpleNameSyntax
+            SyntaxFactory.IdentifierName "Tasks" :> SimpleNameSyntax
+            SF.genericName "Task" [ typeSyntax ] :> SimpleNameSyntax
+        ]
+        |> SF.qualifiedTypeName
+    let uriParam =
+        SyntaxFactory
+            .Parameter(SyntaxFactory.Identifier "uri")
+            .WithType(SyntaxFactory.ParseTypeName "System.Uri")
+    SyntaxFactory
+        .MethodDeclaration(returnType, loadFromWebMethodName)
+        .WithModifiers(
+            [
+                SyntaxKind.PublicKeyword
+                SyntaxKind.StaticKeyword
+                SyntaxKind.AsyncKeyword
+            ]
+            |> SF.getKeywordTokenList
+        )
+        .WithParameterList(
+            uriParam
+            |> SyntaxFactory.SingletonSeparatedList
+            |> SyntaxFactory.ParameterList
+        )
+        .WithBody(
+            [
+                SyntaxFactory
+                    .UsingStatement(
+                        [
+                            SF.variableDeclaration
+                                "request"
+                                (
+                                    SF.objectCreation
+                                        (SyntaxFactory.ParseTypeName "System.Net.Http.HttpRequestMessage")
+                                        [
+                                            SF.simpleMemberAccess (SyntaxFactory.IdentifierName "Get") (SyntaxFactory.ParseTypeName "System.Net.Http.HttpMethod") |> SyntaxFactory.Argument
+                                            uriParam.Identifier |> SyntaxFactory.IdentifierName |> SyntaxFactory.Argument
+                                        ]
+                                )
+                            |> SyntaxFactory.LocalDeclarationStatement
+                            :> StatementSyntax
+
+                            SF.methodInvocation
+                                (
+                                    SyntaxFactory.IdentifierName "request"
+                                    |> SF.simpleMemberAccess (SyntaxFactory.IdentifierName "Headers")
+                                    |> SF.simpleMemberAccess (SyntaxFactory.IdentifierName "Accept")
+                                    |> SF.simpleMemberAccess (SyntaxFactory.IdentifierName "Add")
+                                )
+                                [
+                                    SF.objectCreation
+                                        (SyntaxFactory.ParseTypeName "System.Net.Http.Headers.MediaTypeWithQualityHeaderValue")
+                                        [
+                                            SyntaxFactory
+                                                .LiteralExpression(SyntaxKind.StringLiteralExpression)
+                                                .WithToken(SyntaxFactory.Literal mimeType)
+                                            |> SyntaxFactory.Argument
+                                        ]
+                                    |> SyntaxFactory.Argument
+                                ]
+                            |> SyntaxFactory.ExpressionStatement
+                            :> StatementSyntax
+
+                            SF.methodInvocation
+                                (
+                                    SyntaxFactory.IdentifierName "request"
+                                    |> SF.simpleMemberAccess (SyntaxFactory.IdentifierName "Headers")
+                                    |> SF.simpleMemberAccess (SyntaxFactory.IdentifierName "UserAgent")
+                                    |> SF.simpleMemberAccess (SyntaxFactory.IdentifierName "Add")
+                                )
+                                [
+                                    SF.objectCreation
+                                        (SyntaxFactory.ParseTypeName "System.Net.Http.Headers.ProductInfoHeaderValue")
+                                        [
+                                            SyntaxFactory
+                                                .LiteralExpression(SyntaxKind.StringLiteralExpression)
+                                                .WithToken(SyntaxFactory.Literal "TypeProviders.CSharp")
+                                            |> SyntaxFactory.Argument
+                                            SyntaxFactory
+                                                .LiteralExpression(SyntaxKind.StringLiteralExpression)
+                                                .WithToken(SyntaxFactory.Literal "0.0.1")
+                                            |> SyntaxFactory.Argument
+                                        ]
+                                    |> SyntaxFactory.Argument
+                                ]
+                            |> SyntaxFactory.ExpressionStatement
+                            :> StatementSyntax
+
+                            SF.variableDeclaration
+                                "response"
+                                (
+                                    SF.methodInvocation
+                                        (
+                                            SF.simpleMemberAccess
+                                                (SyntaxFactory.IdentifierName "ConfigureAwait")
+                                                (
+                                                    SF.methodInvocation
+                                                        (
+                                                            SF.simpleMemberAccess
+                                                                (SyntaxFactory.IdentifierName "SendAsync")
+                                                                (SyntaxFactory.IdentifierName "client")
+                                                        )
+                                                        [ SyntaxFactory.IdentifierName "request" |> SyntaxFactory.Argument ]
+
+                                                )
+                                        )
+                                        [ SyntaxFactory.LiteralExpression SyntaxKind.FalseLiteralExpression |> SyntaxFactory.Argument ]
+                                    |> SyntaxFactory.AwaitExpression
+                                )
+                            |> SyntaxFactory.LocalDeclarationStatement
+                            :> StatementSyntax
+
+                            SF.methodInvocation
+                                (
+                                    SyntaxFactory.IdentifierName "response"
+                                    |> SF.simpleMemberAccess (SyntaxFactory.IdentifierName "EnsureSuccessStatusCode")
+                                )
+                                []
+                            |> SyntaxFactory.ExpressionStatement
+                            :> StatementSyntax
+
+                            SF.variableDeclaration
+                                "dataStream"
+                                (
+                                    SF.methodInvocation
+                                        (
+                                            SF.simpleMemberAccess
+                                                (SyntaxFactory.IdentifierName "ConfigureAwait")
+                                                (
+                                                    SF.methodInvocation
+                                                        (
+                                                            SyntaxFactory.IdentifierName "response"
+                                                            |> SF.simpleMemberAccess (SyntaxFactory.IdentifierName "Content")
+                                                            |> SF.simpleMemberAccess (SyntaxFactory.IdentifierName "ReadAsStreamAsync")
+                                                        )
+                                                        []
+
+                                                )
+                                        )
+                                        [ SyntaxFactory.LiteralExpression SyntaxKind.FalseLiteralExpression |> SyntaxFactory.Argument ]
+                                    |> SyntaxFactory.AwaitExpression
+                                )
+                            |> SyntaxFactory.LocalDeclarationStatement
+                            :> StatementSyntax
+
+                            SF.methodInvocation
+                                (SyntaxFactory.IdentifierName parseMethodName)
+                                [ SyntaxFactory.IdentifierName "dataStream" |> SyntaxFactory.Argument ]
+                            |> SyntaxFactory.ReturnStatement
+                            :> StatementSyntax
+                        ]
+                        |> SyntaxFactory.Block
+                    )
+                    .WithDeclaration(
+                        SF.variableDeclaration
+                            "client"
+                            (SF.objectCreation (SyntaxFactory.ParseTypeName "System.Net.Http.HttpClient") [])
+                    )
+                :> StatementSyntax
+            ]
+            |> SyntaxFactory.Block
+        )
 
 let getLoadFromFileMethod typeSyntax =
-    [
-        sprintf "public static %O %s(string filePath)" typeSyntax loadFromFileMethodName
-        "{"
-        "    var data = System.IO.File.ReadAllText(filePath);"
-        sprintf "    return %s(data);" parseMethodName
-        "}"
-    ]
-    |> parseMethodDeclarationSyntax
+    let filePathParam =
+        SyntaxFactory
+            .Parameter(SyntaxFactory.Identifier "filePath")
+            .WithType(SyntaxKind.StringKeyword |> SyntaxFactory.Token |> SyntaxFactory.PredefinedType)
+    SyntaxFactory
+        .MethodDeclaration(typeSyntax, loadFromFileMethodName)
+        .WithParameterList(
+            filePathParam
+            |> SyntaxFactory.SingletonSeparatedList
+            |> SyntaxFactory.ParameterList
+        )
+        .WithModifiers(
+            [
+                SyntaxKind.PublicKeyword
+                SyntaxKind.StaticKeyword
+            ]
+            |> SF.getKeywordTokenList
+        )
+        .WithBody(
+            [
+                SF.variableDeclaration
+                    "data"
+                    (SF.methodInvocation
+                        (SF.simpleMemberAccess (SyntaxFactory.IdentifierName "ReadAllText") (SyntaxFactory.ParseTypeName "System.IO.File"))
+                        [ filePathParam.Identifier |> SyntaxFactory.IdentifierName |> SyntaxFactory.Argument ]
+                    )
+                |> SyntaxFactory.LocalDeclarationStatement
+                :> StatementSyntax
+
+                SyntaxFactory.ReturnStatement(
+                    SF.methodInvocation
+                        (SyntaxFactory.IdentifierName parseMethodName)
+                        [ "data" |> SyntaxFactory.IdentifierName |> SyntaxFactory.Argument ]
+                )
+                :> StatementSyntax
+            ]
+            |> SyntaxFactory.Block
+        )
 
 let toUri str =
     match Uri.TryCreate(str, UriKind.RelativeOrAbsolute) with
@@ -129,160 +364,176 @@ let private (|FileInfo|_|) str =
     | _ -> None
 
 let getGetSampleMethod returnType (sampleData: string) =
-    //public static JsonProvider GetSample()
-    //{
-    //    var data = "...";
-    //    return Parse(data);
-    //}
+    let sampleDataStringLiteralExpression =
+        SyntaxFactory
+            .LiteralExpression(SyntaxKind.StringLiteralExpression)
+            .WithToken(SyntaxFactory.Literal sampleData)
+        :> ExpressionSyntax
 
-    // OR:
+    let modifiers =
+        [
+            SyntaxKind.PublicKeyword
+            SyntaxKind.StaticKeyword
+        ]
+        |> SF.getKeywordTokenList
 
-    //public static Task<JsonProvider> GetSampleAsync()
-    //{
-    //    var data = new Uri("...");
-    //    return LoadFromWebAsync(data);
-    //}
+    match sampleData with
+    | WebUri _ ->
+        let returnType = SF.genericName "System.Threading.Tasks.Task" [ returnType ]
+        SyntaxFactory
+            .MethodDeclaration(returnType, "GetSampleAsync")
+            .WithModifiers(modifiers)
+            .WithBody(
+                [
+                    SF.variableDeclaration
+                        "sampleUri"
+                        (
+                            SF.objectCreation
+                                (SyntaxFactory.ParseTypeName "System.Uri")
+                                [ sampleDataStringLiteralExpression |> SyntaxFactory.Argument ]
+                        )
+                    |> SyntaxFactory.LocalDeclarationStatement
+                    :> StatementSyntax
 
-    // OR:
+                    SyntaxFactory
+                        .ReturnStatement(
+                            SF.methodInvocation
+                                (SyntaxFactory.IdentifierName "LoadFromWebAsync")
+                                [ SyntaxFactory.IdentifierName "sampleUri" |> SyntaxFactory.Argument ]
+                        )
+                    :> StatementSyntax
+                ]
+                |> SyntaxFactory.Block
+            )
+    | FileInfo _ ->
+        SyntaxFactory
+            .MethodDeclaration(returnType, "GetSample")
+            .WithModifiers(modifiers)
+            .WithBody(
+                [
+                    SF.variableDeclaration
+                        "sampleFilePath"
+                        sampleDataStringLiteralExpression
+                    |> SyntaxFactory.LocalDeclarationStatement
+                    :> StatementSyntax
 
-    //public static JsonProvider GetSample()
-    //{
-    //    var data = "...";
-    //    return LoadFromFile(data);
-    //}
+                    SyntaxFactory
+                        .ReturnStatement(
+                            SF.methodInvocation
+                                (SyntaxFactory.IdentifierName "LoadFromFile")
+                                [ SyntaxFactory.IdentifierName "sampleFilePath" |> SyntaxFactory.Argument ]
+                        )
+                    :> StatementSyntax
+                ]
+                |> SyntaxFactory.Block
+            )
+    | _ ->
+        SyntaxFactory
+            .MethodDeclaration(returnType, "GetSample")
+            .WithModifiers(modifiers)
+            .WithBody(
+                [
+                    SF.variableDeclaration
+                        "sampleData"
+                        sampleDataStringLiteralExpression
+                    |> SyntaxFactory.LocalDeclarationStatement
+                    :> StatementSyntax
 
-    let isWebUri, isFilePath, loadMethodName =
-        match sampleData with
-        | WebUri _ -> true, false, loadFromWebMethodName
-        | FileInfo _ -> false, true, loadFromFileMethodName
-        | _ -> false, false, parseMethodName
+                    SyntaxFactory
+                        .ReturnStatement(
+                            SF.methodInvocation
+                                (SyntaxFactory.IdentifierName "Parse")
+                                [ SyntaxFactory.IdentifierName "sampleData" |> SyntaxFactory.Argument ]
+                        )
+                    :> StatementSyntax
+                ]
+                |> SyntaxFactory.Block
+            )
 
-    let isAsync = isWebUri
-
-    let returnType =
-        if isAsync
-        then
-            SyntaxFactory.GenericName(
-                SyntaxFactory.Identifier "System.Threading.Tasks.Task",
-                returnType |> SyntaxFactory.SingletonSeparatedList |> SyntaxFactory.TypeArgumentList
-            ) :> TypeSyntax
-        else returnType
-
-    let sampleDataExpression =
-        let stringLiteralExpression =
-            SyntaxFactory
-                .LiteralExpression(SyntaxKind.StringLiteralExpression)
-                .WithToken(SyntaxFactory.Literal sampleData)
-            :> ExpressionSyntax
-
-        if isWebUri
-        then
-            SyntaxFactory
-                .ObjectCreationExpression(
-                    SyntaxFactory.ParseTypeName "System.Uri"
-                )
-                .WithArgumentList(
-                    stringLiteralExpression
-                    |> SyntaxFactory.Argument
-                    |> SyntaxFactory.SingletonSeparatedList
-                    |> SyntaxFactory.ArgumentList
-                )
-                :> ExpressionSyntax
-        else stringLiteralExpression
+let getFromStringMethod (parseStreamMethod: MethodDeclarationSyntax) returnType =
+    let dataParam =
+        SyntaxFactory
+            .Parameter(SyntaxFactory.Identifier "data")
+            .WithType(SyntaxKind.StringKeyword |> SyntaxFactory.Token |> SyntaxFactory.PredefinedType)
 
     SyntaxFactory
-        .MethodDeclaration(returnType, if isAsync then "GetSampleAsync" else "GetSample")
+        .MethodDeclaration(returnType, SyntaxFactory.Identifier parseMethodName)
+        .WithParameterList(
+            dataParam
+            |> SyntaxFactory.SingletonSeparatedList
+            |> SyntaxFactory.ParameterList
+        )
         .WithModifiers(
             [
                 SyntaxKind.PublicKeyword
                 SyntaxKind.StaticKeyword
             ]
-            |> List.map SyntaxFactory.Token
-            |> SyntaxFactory.TokenList
+            |> SF.getKeywordTokenList
         )
         .WithBody(
-            SyntaxFactory.Block(
-                SyntaxFactory.LocalDeclarationStatement(
-                    SyntaxFactory
-                        .VariableDeclaration(SyntaxFactory.IdentifierName "var")
-                        .WithVariables(
-                            SyntaxFactory.SingletonSeparatedList(
-                                SyntaxFactory
-                                    .VariableDeclarator("data")
-                                    .WithInitializer(
-                                        SyntaxFactory.EqualsValueClause sampleDataExpression
-                                    )
-                                )
-                            )
-                ),
+            [
+                SF.variableDeclaration
+                    "dataBytes"
+                    (SF.methodInvocation
+                        (
+                            SyntaxFactory.ParseTypeName "System.Text.Encoding"
+                            |> SF.simpleMemberAccess (SyntaxFactory.IdentifierName "Default")
+                            |> SF.simpleMemberAccess (SyntaxFactory.IdentifierName "GetBytes")
+                        )
+                        [ dataParam.Identifier |> SyntaxFactory.IdentifierName |> SyntaxFactory.Argument ]
+                    )
+                |> SyntaxFactory.LocalDeclarationStatement
+                :> StatementSyntax
+
                 SyntaxFactory
-                    .ReturnStatement(
+                    .UsingStatement(
                         SyntaxFactory
-                            .InvocationExpression(
-                                SyntaxFactory.IdentifierName loadMethodName
-                            )
-                            .WithArgumentList(
-                                SyntaxFactory.IdentifierName "data"
-                                |> SyntaxFactory.Argument
-                                |> SyntaxFactory.SingletonSeparatedList
-                                |> SyntaxFactory.ArgumentList
+                            .ReturnStatement(
+                                SF.methodInvocation
+                                    (SyntaxFactory.IdentifierName parseMethodName)
+                                    [ SyntaxFactory.IdentifierName "dataStream" |> SyntaxFactory.Argument ]
                             )
                     )
-            )
-       )
-
-let getFromStringMethod returnType =
-    SyntaxFactory
-        .MethodDeclaration(returnType, parseMethodName)
-        .WithModifiers(
-            SyntaxFactory.TokenList(
-                SyntaxFactory.Token SyntaxKind.PublicKeyword,
-                SyntaxFactory.Token SyntaxKind.StaticKeyword
-            )
-        )
-        .WithParameterList(
-            SyntaxFactory
-                .Parameter(SyntaxFactory.Identifier "data")
-                .WithType(
-                    SyntaxKind.StringKeyword
-                    |> SyntaxFactory.Token
-                    |> SyntaxFactory.PredefinedType
-                )
-            |> SyntaxFactory.SingletonSeparatedList
-            |> SyntaxFactory.ParameterList
-        )
-        .WithBody(
-            SyntaxFactory.Block(
-                SyntaxFactory.ReturnStatement(
-                    SyntaxFactory
-                        .InvocationExpression(
-                            SyntaxFactory.MemberAccessExpression(
-                                SyntaxKind.SimpleMemberAccessExpression,
-                                SyntaxFactory.ParseTypeName "Newtonsoft.Json.JsonConvert",
-                                SyntaxFactory
-                                    .GenericName("DeserializeObject")
-                                    .WithTypeArgumentList(
-                                        returnType
-                                        |> SyntaxFactory.SingletonSeparatedList
-                                        |> SyntaxFactory.TypeArgumentList
-                                    )
+                    .WithDeclaration(
+                        SF.variableDeclaration
+                            "dataStream"
+                            (
+                                SF.objectCreation
+                                    (SyntaxFactory.ParseTypeName "System.IO.MemoryStream")
+                                    [ SyntaxFactory.IdentifierName "dataBytes" |> SyntaxFactory.Argument ]
                             )
-                        )
-                        .WithArgumentList(
-                            SyntaxFactory.IdentifierName "data"
-                            |> SyntaxFactory.Argument
-                            |> SyntaxFactory.SingletonSeparatedList
-                            |> SyntaxFactory.ArgumentList
-                        )
-                )
-            )
+                    )
+                :> StatementSyntax
+            ]
+            |> SyntaxFactory.Block
         )
 
-let getCreationMethods (rootTypeSyntax: TypeSyntax) sampleData =
+let getCreationMethods (rootTypeSyntax: TypeSyntax) sampleData (parseStreamStatements: TypeSyntax -> ParameterSyntax -> StatementSyntax list) mimeType =
+    let parseStreamMethod =
+        let parseStreamParam =
+            SyntaxFactory
+                .Parameter(SyntaxFactory.Identifier "dataStream")
+                .WithType(SyntaxFactory.ParseTypeName "System.IO.Stream")
+        SyntaxFactory
+            .MethodDeclaration(rootTypeSyntax, SyntaxFactory.Identifier parseMethodName)
+            .WithModifiers(
+                [
+                    SyntaxKind.PublicKeyword
+                    SyntaxKind.StaticKeyword
+                ]
+                |> SF.getKeywordTokenList
+            )
+            .WithParameterList(
+                parseStreamParam
+                |> SyntaxFactory.SingletonSeparatedList
+                |> SyntaxFactory.ParameterList
+            )
+            .WithBody(SyntaxFactory.Block(parseStreamStatements rootTypeSyntax parseStreamParam))
     [
-        getLoadFromWebMethod rootTypeSyntax
+        parseStreamMethod
+        getLoadFromWebMethod rootTypeSyntax mimeType
         getLoadFromFileMethod rootTypeSyntax
-        getFromStringMethod rootTypeSyntax
+        getFromStringMethod parseStreamMethod rootTypeSyntax
         getGetSampleMethod rootTypeSyntax sampleData
     ]
 
@@ -333,12 +584,12 @@ let rec getTypeSyntax = function
         |> SyntaxFactory.NullableType
         :> TypeSyntax
 
-let generateCreationMethods dataType sampleData =
+let generateCreationMethods dataType sampleData parseStreamStatements mimeType =
     let rootTypeSyntax = getTypeSyntax dataType.ReturnTypeFromParsingData
-    getCreationMethods rootTypeSyntax sampleData
+    getCreationMethods rootTypeSyntax sampleData parseStreamStatements mimeType
     |> Seq.cast<MemberDeclarationSyntax>
 
-let generateJsonType dataTypeMember =
+let generateDataStructureForMember dataTypeMember =
     let rec convertDataTypeMember dataTypeMember =
         match dataTypeMember with
         | Property (name, propertyType) ->
@@ -347,11 +598,7 @@ let generateJsonType dataTypeMember =
                     getTypeSyntax propertyType,
                     SyntaxFactory.Identifier name
                 )
-                .WithModifiers(
-                    SyntaxKind.PublicKeyword
-                    |> SyntaxFactory.Token
-                    |> SyntaxFactory.TokenList
-                )
+                .WithModifiers(SF.getKeywordTokenList [ SyntaxKind.PublicKeyword ])
                 .WithAccessorList(
                     SyntaxFactory.AccessorList(
                         SyntaxFactory.SingletonList(
@@ -376,11 +623,7 @@ let generateJsonType dataTypeMember =
 
             SyntaxFactory
                 .ClassDeclaration(SyntaxFactory.Identifier name)
-                .WithModifiers(
-                    SyntaxKind.PublicKeyword
-                    |> SyntaxFactory.Token
-                    |> SyntaxFactory.TokenList
-                )
+                .WithModifiers(SF.getKeywordTokenList [ SyntaxKind.PublicKeyword ])
                 .WithMembers(
                     [
                         yield! members |> List.map convertDataTypeMember
@@ -394,5 +637,5 @@ let generateJsonType dataTypeMember =
 
 let generateDataStructure dataType =
     dataType.Members
-    |> Seq.map generateJsonType
+    |> Seq.map generateDataStructureForMember
     |> Seq.cast<MemberDeclarationSyntax>

@@ -66,6 +66,7 @@
     <Compile Include="JsonProviderBridge.fs" />
     <Compile Include="DataTypeUpdate.fs" />
     <Compile Include="CodeGeneration.fs" />
+    <Compile Include="JsonCodeGeneration.fs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="FSharp.Data.DesignTime">

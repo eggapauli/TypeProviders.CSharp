@@ -28,9 +28,9 @@ let parseDataType (rootType: ProvidedTypeDefinition) =
     let getChildTypeDefinition ty =
         let rec getChildMemberDefinition (m: MemberInfo) =
             match m with
-            | :? ProvidedProperty as p ->
+            | :? PropertyInfo as p ->
                 Property (p.Name, TypeName.fromType p.PropertyType)
-            | :? ProvidedTypeDefinition as t ->
+            | :? Type as t ->
                 let members =
                     getMembers t
                     |> List.map getChildMemberDefinition

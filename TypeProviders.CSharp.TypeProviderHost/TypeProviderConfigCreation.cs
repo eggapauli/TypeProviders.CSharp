@@ -49,17 +49,11 @@ namespace TypeProviders.CSharp
         public static TypeProviderConfig CreateConfig(Assembly runtimeAssembly, IEnumerable<Assembly> additionalAssemblies)
         {
             var referencedAssemblies = runtimeAssembly.GetReferencedAssemblies();
-            var requiredAssemblies = new[] { "mscorlib", "FSharp.Core", "FSharp.Data.DesignTime" }
-                .Select(requiredAssemblyName =>
-                {
-                    var assemblyName = referencedAssemblies
-                        .FirstOrDefault(asm => asm.Name == requiredAssemblyName);
-                    if (assemblyName == null)
-                    {
-                        throw new Exception($"Couldn't find assembly {requiredAssemblyName} in referenced assemblies {referencedAssemblies.Select(a => a.Name)}");
-                    }
-                    return Assembly.Load(assemblyName);
-                });
+            var requiredAssemblies = new[] {
+                typeof(object).Assembly,
+                Assembly.Load("FSharp.Core"),
+                Assembly.Load("FSharp.Data.DesignTime")
+            };
 
             var assemblies = new[] { runtimeAssembly }
                 .Concat(requiredAssemblies)

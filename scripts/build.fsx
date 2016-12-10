@@ -93,14 +93,14 @@ Target "TestCore" <| fun () ->
 
 Target "TestBuildTimeGeneration" <| fun () ->
     let buildPath = buildBasePath @@ "test" @@ "TypeProviders.CSharp.BuildTimeGeneration.Test"
-    let target = @"BuildTimeGeneration\TypeProviders_CSharp_BuildTimeGeneration_Test"
+    let target = @"BuildTimeGeneration\Test\TypeProviders_CSharp_BuildTimeGeneration_Test"
     let properties _ = [
         "GeneratorAssemblyBaseSearchPath", buildPath
     ]
     MSBuildWithProjectProperties buildPath target properties [ slnPath ] |> ignore
-    // !!(buildPath @@ "*.Test.dll")
-    // |> Seq.exactlyOne
-    // |> test
+    !!(buildPath @@ "*.Test.dll")
+    |> Seq.exactlyOne
+    |> test
 
 Target "TestCodeRefactoringProvider" <| fun () ->
     let buildPath = buildBasePath @@ "test" @@ "TypeProviders.CSharp.CodeRefactoringProvider.Test"

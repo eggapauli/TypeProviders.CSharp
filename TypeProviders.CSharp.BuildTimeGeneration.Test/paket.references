@@ -1,1 +1,6 @@
-Newtonsoft.Json
+FSharp.Core
+
+group Test
+    Suave
+    Unquote
+    xunit

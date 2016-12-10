@@ -7,8 +7,8 @@
     <ProjectGuid>{53377866-E9E9-4C06-83D3-76A3F6094328}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>TypeProviders.CSharp.BuildTimeGeneration.Test</RootNamespace>
-    <AssemblyName>TypeProviders.CSharp.BuildTimeGeneration.Test</AssemblyName>
+    <RootNamespace>TypeProviders.CSharp.BuildTimeGeneration.TestFixture</RootNamespace>
+    <AssemblyName>TypeProviders.CSharp.BuildTimeGeneration.TestFixture</AssemblyName>
     <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
   </PropertyGroup>

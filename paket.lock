@@ -312,6 +312,8 @@ NUGET
     FSharp.Core (4.0.0.1)
     Microsoft.NETCore.Platforms (1.1) - framework: dnxcore50
     Microsoft.NETCore.Targets (1.1) - framework: dnxcore50
+    Suave (1.1.3)
+      FSharp.Core (>= 3.1.2.5)
     System.Collections (4.3) - framework: dnxcore50
       Microsoft.NETCore.Platforms (>= 1.1) - framework: dnxcore50, netstandard10, >= netstandard13
       Microsoft.NETCore.Targets (>= 1.1) - framework: dnxcore50, netstandard10, >= netstandard13

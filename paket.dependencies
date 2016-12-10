@@ -14,6 +14,7 @@ nuget xunit.runner.visualstudio version_in_path:true # must be in main group, ot
 group Test
     redirects: on
     source https://api.nuget.org/v3/index.json
+    nuget Suave
     nuget Unquote
     nuget xunit
 

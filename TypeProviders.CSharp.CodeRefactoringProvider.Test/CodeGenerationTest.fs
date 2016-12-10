@@ -58,8 +58,8 @@ let creationMethods typeName indentationLevel sampleData =
         ""
         sprintf "public static %s Load(string filePath)" typeName
         "{"
-        "    var data = System.IO.File.ReadAllText(filePath);"
-        sprintf "    return Parse(data);"
+        "    using (var dataStream = System.IO.File.OpenRead(filePath))"
+        "        return Parse(dataStream);"
         "}"
         ""
         sprintf "public static %s Parse(string data)" typeName

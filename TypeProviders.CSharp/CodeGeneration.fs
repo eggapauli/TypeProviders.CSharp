@@ -295,16 +295,19 @@ let getLoadFromFileMethod typeSyntax =
         )
         .WithBody(
             [
-                SyntaxFactory.ParseTypeName "System.IO.File"
-                |> SF.simpleMemberAccess (SyntaxFactory.IdentifierName "ReadAllText")
-                |> SF.methodInvocation [ filePathParam.Identifier |> SyntaxFactory.IdentifierName |> SyntaxFactory.Argument ]
-                |> SF.variableDeclaration "data"
-                |> SyntaxFactory.LocalDeclarationStatement
-                :> StatementSyntax
-
-                SyntaxFactory.IdentifierName parseMethodName
-                |> SF.methodInvocation [ "data" |> SyntaxFactory.IdentifierName |> SyntaxFactory.Argument ]
-                |> SyntaxFactory.ReturnStatement
+                SyntaxFactory
+                    .UsingStatement(
+                        SyntaxFactory.IdentifierName parseMethodName
+                        |> SF.methodInvocation [ "dataStream" |> SyntaxFactory.IdentifierName |> SyntaxFactory.Argument ]
+                        |> SyntaxFactory.ReturnStatement
+                    )
+                    .WithDeclaration(
+                        SyntaxFactory.ParseTypeName "System.IO.File"
+                        |> SF.simpleMemberAccess (SyntaxFactory.IdentifierName "OpenRead")
+                        |> SF.methodInvocation [ filePathParam.Identifier |> SyntaxFactory.IdentifierName |> SyntaxFactory.Argument ]
+                        |> SF.variableDeclaration "dataStream"
+                    )
+                
                 :> StatementSyntax
             ]
             |> SyntaxFactory.Block

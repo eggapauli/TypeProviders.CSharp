@@ -9,11 +9,16 @@ nuget ILRepack
 nuget Newtonsoft.Json
 nuget Microsoft.CodeAnalysis.CSharp.Workspaces = 1.1.1
 nuget System.Collections.Immutable = 1.1.37
-nuget Unquote
-nuget xunit
-nuget xunit.runner.visualstudio version_in_path:true
+nuget xunit.runner.visualstudio version_in_path:true # must be in main group, otherwise isn't recognized by VS
+
+group Test
+    redirects: on
+    source https://api.nuget.org/v3/index.json
+    nuget Unquote
+    nuget xunit
 
 group Build
+    redirects: on
     source https://api.nuget.org/v3/index.json
     nuget FAKE
     nuget GitVersion.CommandLine

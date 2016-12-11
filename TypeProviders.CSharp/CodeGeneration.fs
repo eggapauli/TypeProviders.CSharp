@@ -521,7 +521,7 @@ let generateCreationMethods dataType sampleData parseStreamStatements mimeType =
     getCreationMethods rootTypeSyntax sampleData parseStreamStatements mimeType
     |> Seq.cast<MemberDeclarationSyntax>
 
-let generateDataStructureForMember dataTypeMember =
+let generateDataStructureForMember generateAdditionalMembers dataTypeMember =
     let rec convertDataTypeMember dataTypeMember =
         match dataTypeMember with
         | Property (name, propertyType) ->
@@ -558,6 +558,7 @@ let generateDataStructureForMember dataTypeMember =
                     [
                         yield! members |> List.map convertDataTypeMember
                         yield getConstructor name properties :> MemberDeclarationSyntax
+                        yield! generateAdditionalMembers name properties
                     ]
                     |> SyntaxFactory.List
                 )
@@ -565,7 +566,7 @@ let generateDataStructureForMember dataTypeMember =
 
     convertDataTypeMember dataTypeMember :?> TypeDeclarationSyntax
 
-let generateDataStructure dataType =
+let generateDataStructure generateAdditionalMembers dataType =
     dataType.Members
-    |> Seq.map generateDataStructureForMember
+    |> Seq.map (generateDataStructureForMember generateAdditionalMembers)
     |> Seq.cast<MemberDeclarationSyntax>

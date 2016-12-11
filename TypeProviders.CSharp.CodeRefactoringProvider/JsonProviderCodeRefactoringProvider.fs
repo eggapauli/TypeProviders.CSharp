@@ -45,7 +45,7 @@ type JsonProviderCodeRefactoringProvider() =
                     |> DataTypeUpdate.CSharp.ensureTypeHasNoPropertyWithSameName
 
                 let members = [
-                    yield! CodeGeneration.generateDataStructure dataType
+                    yield! JsonCodeGeneration.generateDataStructure dataType
                     yield! JsonCodeGeneration.generateCreationMethods dataType sampleData
                 ]
 

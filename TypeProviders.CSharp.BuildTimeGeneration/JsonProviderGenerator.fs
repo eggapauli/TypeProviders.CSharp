@@ -70,7 +70,7 @@ type JsonProviderGenerator(attributeData: AttributeData) =
                            |> DataTypeUpdate.CSharp.ensureTypeHasNoPropertyWithSameName
                    
                        [
-                           yield! CodeGeneration.generateDataStructure dataType
+                           yield! JsonCodeGeneration.generateDataStructure dataType
                            yield! JsonCodeGeneration.generateCreationMethods dataType sampleData
                        ]
                    with e ->

@@ -4,6 +4,9 @@ open Microsoft.CodeAnalysis.CSharp
 open Microsoft.CodeAnalysis.CSharp.Syntax
 open TypeProviders.CSharp.CodeGeneration
 
+let generateDataStructure dataType =
+    CodeGeneration.generateDataStructure (fun _ _ -> []) dataType
+
 let generateCreationMethods dataType sampleData =
     let parseStreamStatements (returnType: TypeSyntax) (dataParam: ParameterSyntax) =
         [

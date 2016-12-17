@@ -109,6 +109,46 @@ let private ensureIsValidIdentifier identifier =
     then identifier
     else sprintf "@%s" identifier
 
+let toSyntaxKind = function
+    | TBool -> SyntaxKind.BoolKeyword
+    | TByte -> SyntaxKind.ByteKeyword
+    | TSByte -> SyntaxKind.SByteKeyword
+    | TChar -> SyntaxKind.CharKeyword
+    | TDecimal -> SyntaxKind.DecimalKeyword
+    | TDouble -> SyntaxKind.DoubleKeyword
+    | TFloat -> SyntaxKind.FloatKeyword
+    | TInt -> SyntaxKind.IntKeyword
+    | TUInt -> SyntaxKind.UIntKeyword
+    | TLong -> SyntaxKind.LongKeyword
+    | TULong -> SyntaxKind.ULongKeyword
+    | TObject -> SyntaxKind.ObjectKeyword
+    | TShort -> SyntaxKind.ShortKeyword
+    | TUShort -> SyntaxKind.UShortKeyword
+    | TString -> SyntaxKind.StringKeyword
+
+let rec getTypeSyntax = function
+    | Existing s
+    | Generated s -> SyntaxFactory.ParseTypeName s
+    | Collection s ->
+        [
+            SyntaxFactory.IdentifierName "System" :> SimpleNameSyntax
+            SyntaxFactory.IdentifierName "Collections" :> SimpleNameSyntax
+            SyntaxFactory.IdentifierName "Generic" :> SimpleNameSyntax
+            SF.genericName "IReadOnlyList" [ getTypeSyntax s ] :> SimpleNameSyntax
+        ]
+        |> SF.qualifiedTypeName
+        :> TypeSyntax
+    | Predefined csType ->
+        csType
+        |> toSyntaxKind
+        |> SyntaxFactory.Token
+        |> SyntaxFactory.PredefinedType
+        :> TypeSyntax
+    | Optional t ->
+        getTypeSyntax t
+        |> SyntaxFactory.NullableType
+        :> TypeSyntax
+
 let getConstructor (typeName: string) properties =
     let variableNameForProperty = firstToLower >> ensureIsValidIdentifier
 
@@ -118,7 +158,8 @@ let getConstructor (typeName: string) properties =
         .WithParameterList(
             properties
             |> List.map (fun (name, propertyType) ->
-                SF.parameter (variableNameForProperty name) propertyType
+                getTypeSyntax propertyType
+                |> SF.parameter (variableNameForProperty name)
             )
             |> SyntaxFactory.SeparatedList
             |> SyntaxFactory.ParameterList
@@ -478,45 +519,6 @@ let getCreationMethods (rootTypeSyntax: TypeSyntax) sampleData (parseStreamState
         getGetSampleMethod rootTypeSyntax sampleData
     ]
 
-let toSyntaxKind = function
-    | TBool -> SyntaxKind.BoolKeyword
-    | TByte -> SyntaxKind.ByteKeyword
-    | TSByte -> SyntaxKind.SByteKeyword
-    | TChar -> SyntaxKind.CharKeyword
-    | TDecimal -> SyntaxKind.DecimalKeyword
-    | TDouble -> SyntaxKind.DoubleKeyword
-    | TFloat -> SyntaxKind.FloatKeyword
-    | TInt -> SyntaxKind.IntKeyword
-    | TUInt -> SyntaxKind.UIntKeyword
-    | TLong -> SyntaxKind.LongKeyword
-    | TULong -> SyntaxKind.ULongKeyword
-    | TObject -> SyntaxKind.ObjectKeyword
-    | TShort -> SyntaxKind.ShortKeyword
-    | TUShort -> SyntaxKind.UShortKeyword
-    | TString -> SyntaxKind.StringKeyword
-
-let rec getTypeSyntax = function
-    | Common s -> SyntaxFactory.ParseTypeName s
-    | Collection s ->
-        [
-            SyntaxFactory.IdentifierName "System" :> SimpleNameSyntax
-            SyntaxFactory.IdentifierName "Collections" :> SimpleNameSyntax
-            SyntaxFactory.IdentifierName "Generic" :> SimpleNameSyntax
-            SF.genericName "IReadOnlyList" [ getTypeSyntax s ] :> SimpleNameSyntax
-        ]
-        |> SF.qualifiedTypeName
-        :> TypeSyntax
-    | Predefined csType ->
-        csType
-        |> toSyntaxKind
-        |> SyntaxFactory.Token
-        |> SyntaxFactory.PredefinedType
-        :> TypeSyntax
-    | Optional t ->
-        getTypeSyntax t
-        |> SyntaxFactory.NullableType
-        :> TypeSyntax
-
 let generateCreationMethods dataType sampleData parseStreamStatements mimeType =
     let rootTypeSyntax = getTypeSyntax dataType.ReturnTypeFromParsingData
     getCreationMethods rootTypeSyntax sampleData parseStreamStatements mimeType
@@ -548,7 +550,7 @@ let generateDataStructureForMember generateAdditionalMembers dataTypeMember =
                 members
                 |> List.choose (function
                     | Property (name, propertyType) ->
-                        Some (name, getTypeSyntax propertyType)
+                        Some (name, propertyType)
                     | _ -> None
                 )
 

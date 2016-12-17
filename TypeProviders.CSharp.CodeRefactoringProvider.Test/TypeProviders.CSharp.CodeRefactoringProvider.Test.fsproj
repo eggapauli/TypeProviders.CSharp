@@ -77,8 +77,10 @@
   <ItemGroup>
     <Compile Include="AssemblyInfo.fs" />
     <None Include="paket.references" />
-    <Compile Include="CodeGenerationTest.fs" />
     <Content Include="App.config" />
+    <Compile Include="CodeGenerationTestSetup.fs" />
+    <Compile Include="CommonCodeGenerationTest.fs" />
+    <Compile Include="JsonCodeGenerationTest.fs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="mscorlib" />

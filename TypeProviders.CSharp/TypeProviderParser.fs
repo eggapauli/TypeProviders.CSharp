@@ -8,8 +8,8 @@ open TypeProviders.CSharp
 
 let parseDataType getTypeMembers (rootType: ProvidedTypeDefinition) =
     let returnType =
-            rootType.GetMethod("Parse").ReturnType
-            |> TypeName.fromType
+        rootType.GetMethod("Parse").ReturnType
+        |> TypeName.fromType
 
     let getChildTypeDefinition ty =
         let rec getChildMemberDefinition (m: MemberInfo) =

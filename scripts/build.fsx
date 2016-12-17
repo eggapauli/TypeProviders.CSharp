@@ -9,7 +9,7 @@ open PaketTemplate
 let repositoryBasePath = __SOURCE_DIRECTORY__ @@ ".."
 let buildBasePath = repositoryBasePath @@ "build"
 let artifactsPath = repositoryBasePath @@ "artifacts"
-let toolsBaseDirectory = repositoryBasePath @@ "packages" @@ "build"
+let toolsBaseDirectory = repositoryBasePath @@ "packages"
 
 let assemblyVersion = getBuildParam "GitVersion_AssemblySemVer"
 let nuGetVersion = getBuildParam "GitVersion_NuGetVersion"

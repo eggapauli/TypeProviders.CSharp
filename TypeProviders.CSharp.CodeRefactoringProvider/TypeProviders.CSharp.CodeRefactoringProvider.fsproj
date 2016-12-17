@@ -52,6 +52,7 @@
   <ItemGroup>
     <None Include="paket.references" />
     <Compile Include="AssemblyInfo.fs" />
+    <Compile Include="CodeRefactoringProviderHelper.fs" />
     <Compile Include="JsonProviderCodeRefactoringProvider.fs" />
   </ItemGroup>
   <ItemGroup>

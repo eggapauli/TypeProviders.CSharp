@@ -127,8 +127,7 @@ let toSyntaxKind = function
     | TString -> SyntaxKind.StringKeyword
 
 let rec getTypeSyntax = function
-    | Existing s
-    | Generated s -> SyntaxFactory.ParseTypeName s
+    | Common s -> SyntaxFactory.ParseTypeName s
     | Collection s ->
         [
             SyntaxFactory.IdentifierName "System" :> SimpleNameSyntax

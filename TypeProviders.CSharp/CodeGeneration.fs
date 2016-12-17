@@ -10,6 +10,11 @@ open FSharp.Data
 open TypeProviders.CSharp
 
 module SF =
+    let stringType =
+        SyntaxKind.StringKeyword
+        |> SyntaxFactory.Token
+        |> SyntaxFactory.PredefinedType
+
     let objectCreation (arguments: ArgumentSyntax list) typeSyntax =
         SyntaxFactory
             .ObjectCreationExpression(typeSyntax)
@@ -278,7 +283,7 @@ let getLoadFromFileMethod typeSyntax =
     let filePathParam =
         SyntaxFactory
             .Parameter(SyntaxFactory.Identifier "filePath")
-            .WithType(SyntaxKind.StringKeyword |> SyntaxFactory.Token |> SyntaxFactory.PredefinedType)
+            .WithType(SF.stringType)
     SyntaxFactory
         .MethodDeclaration(typeSyntax, loadFromFileMethodName)
         .WithParameterList(
@@ -407,11 +412,7 @@ let getGetSampleMethod returnType (sampleData: string) =
             )
 
 let getFromStringMethod (parseStreamMethod: MethodDeclarationSyntax) returnType =
-    let dataParam =
-        SyntaxKind.StringKeyword
-        |> SyntaxFactory.Token
-        |> SyntaxFactory.PredefinedType
-        |> SF.parameter "data"
+    let dataParam = SF.parameter "data" SF.stringType
 
     SyntaxFactory
         .MethodDeclaration(returnType, SyntaxFactory.Identifier parseMethodName)

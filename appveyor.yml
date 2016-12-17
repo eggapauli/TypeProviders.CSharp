@@ -14,7 +14,7 @@ before_build:
     - cmd: .paket\paket.exe install
 
 build_script:
-    - cmd: packages\build\GitVersion.CommandLine\tools\GitVersion.exe /l console /updateassemblyinfo /exec "packages\build\FAKE\tools\FAKE.exe" /execArgs "scripts\build.fsx"
+    - cmd: packages\GitVersion.CommandLine\tools\GitVersion.exe /l console /updateassemblyinfo /exec "packages\FAKE\tools\FAKE.exe" /execArgs "scripts\build.fsx"
 
 test: off
 

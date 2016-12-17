@@ -1,5 +1,4 @@
 ﻿FSharp.Core
 
-group Test
-    Unquote
-    xunit
+Unquote
+xunit

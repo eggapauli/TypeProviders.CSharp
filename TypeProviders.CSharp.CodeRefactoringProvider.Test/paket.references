@@ -1,7 +1,6 @@
 ﻿FSharp.Core
-Newtonsoft.Json
 Microsoft.CodeAnalysis.CSharp.Workspaces
 
-group Test
-    Unquote
-    xunit
+Newtonsoft.Json
+Unquote
+xunit
